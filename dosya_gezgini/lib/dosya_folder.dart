@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'package:dosya_gezgini/altislemprovider.dart';
 import 'package:dosya_gezgini/folderleragaci.dart';
 import 'package:dosya_gezgini/router.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path/path.dart' as pathinfo;
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 
 class Klasor extends StatelessWidget {
   final FolderNode klasor;
@@ -24,6 +26,12 @@ class Klasor extends StatelessWidget {
       child: Animate(
         effects: [FadeEffect(duration: Duration(milliseconds: 100))],
         child: GestureDetector(
+          onLongPress: () {
+            Provider.of<Altislemprovider>(
+              context,
+              listen: false,
+            ).changeanahtar();
+          },
           onTap: () {
             context.push(Paths.klasoricerigisayfasi, extra: klasor);
           },

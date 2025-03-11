@@ -215,7 +215,7 @@ class Anasayfaicerigi extends StatelessWidget {
                               .root
                               .filechildren
                               .length) {
-                      return  Dosya(
+                        return Dosya(
                           file:
                               context
                                   .watch<Izinler>()

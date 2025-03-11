@@ -1,6 +1,10 @@
 // ignore_for_file: avoid_unnecessary_containers
+import 'package:dosya_gezgini/altislemprovider.dart';
+import 'package:dosya_gezgini/renkler.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class Anasayfa extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -51,6 +55,100 @@ class Anasayfa extends StatelessWidget {
       //     ),
       //   ],
       // ),
+      bottomNavigationBar:
+          context.watch<Altislemprovider>().anahtar
+              ? SafeArea(
+                child: Positioned(
+                  bottom: 0,
+                  child: Animate(
+                    effects: [
+                      SlideEffect(
+                        begin: Offset(0, 2),
+                        delay: Duration(milliseconds: 200),
+                      ),
+                    ],
+                    child: Container(
+                      width: MediaQuery.of(context).size.width - 20,
+                      height: 70,
+                      padding: EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          width: 2,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.delete_outlined, size: 30),
+                                  Text('sil'),
+                                ],
+                              ),
+                            ),
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.copy_all_outlined, size: 30),
+                                  Text('kopyala'),
+                                ],
+                              ),
+                            ),
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.content_cut_outlined, size: 30),
+                                  Text('kes'),
+                                ],
+                              ),
+                            ),
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.favorite_border_outlined,
+                                    size: 30,
+                                  ),
+                                  Text('kaydet'),
+                                ],
+                              ),
+                            ),
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.lock_outlined, size: 30),
+                                  Text('sakla'),
+                                ],
+                              ),
+                            ),
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.drive_file_rename_outline,
+                                    size: 30,
+                                  ),
+                                  Text('adlandir'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+              : SizedBox(),
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(kBottomNavigationBarHeight),
         child: Container(

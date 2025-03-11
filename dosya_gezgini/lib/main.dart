@@ -1,3 +1,4 @@
+import 'package:dosya_gezgini/altislemprovider.dart';
 import 'package:dosya_gezgini/anasayfaicerigi.dart';
 import 'package:dosya_gezgini/folderleragaci.dart';
 import 'package:dosya_gezgini/localestoragebilgileri.dart';
@@ -22,6 +23,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => AppTheme()),
+        ChangeNotifierProvider(create: (context) => Altislemprovider()..anahtar),
         ChangeNotifierProvider(create: (context) => FileTree(rootPath)),
         ChangeNotifierProvider(
           create: (context) => FolderNode('name', rootPath, [], []),
