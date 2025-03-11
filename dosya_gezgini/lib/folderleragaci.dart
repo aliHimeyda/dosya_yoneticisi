@@ -86,28 +86,42 @@ class FileTree extends ChangeNotifier {
   }
 
   Future<void> agactaarama(String aranan) async {
-    arananfolder.clear();
-    arananfile.clear();
     await _agactaarama(root, aranan);
   }
 
   Future<void> _agactaarama(FolderNode node, String aranan) async {
-    debugPrint('calisti');
-    if (node.name.toLowerCase().contains(aranan.toLowerCase())) {
-      arananfolder.add(node);
+    debugPrint('Arama çalıştı: $aranan');
+
+    if (aranan.isEmpty) {
+      arananfolder = [];
+      arananfile = [];
+      debugPrint('Arama listesi temizlendi');
+      notifyListeners();
+      return; // **Boş aramayı hemen bitir**
     }
-    for (var child in node.filechildren) {
+
+    if (node.name.toLowerCase().contains(aranan.toLowerCase())) {
+      debugPrint('Eşleşen klasör: ${node.name}');
+      arananfolder.add(node);
+      notifyListeners();
+    }
+
+    // **Dosyaları kontrol et**
+    for (File child in node.filechildren) {
       if (pathinfo
           .basename(child.path)
           .toLowerCase()
           .contains(aranan.toLowerCase())) {
+        debugPrint('Eşleşen dosya: ${pathinfo.basename(child.path)}');
         arananfile.add(child);
+        notifyListeners();
       }
     }
-    for (var child in node.folderchildren) {
+
+    // **Alt klasörleri kontrol et**
+    for (FolderNode child in node.folderchildren) {
       await _agactaarama(child, aranan);
     }
-    notifyListeners();
   }
 
   Future<void> _buildTree(FolderNode node) async {

@@ -17,211 +17,224 @@ class Anasayfa extends StatelessWidget {
 
     // Eğer Ozelurunler sayfasındaysak, BottomNavigationBar'ı gösterme
     // bool showBottomNavBar = true;
-    return Scaffold(
-      // appBar: AppBar(
-      //   backgroundColor: Colors.transparent,
-      //   leading: Padding(
-      //     padding: EdgeInsets.only(left: 20),
-      //     child: SizedBox(
-      //       width: 200,
-      //       child: TextField(
-      //         onChanged: (value) {
-      //           // Arama işlemleri burada yazılacak
-      //         },
-      //         decoration: InputDecoration(
-      //           suffixIcon: IconButton(
-      //             icon: Image.asset(
-      //               'lib/icons/aramaiconu.png',
-      //               width: 20,
-      //               color: Renkler.kahverengi,
-      //             ),
-      //             onPressed: () {},
-      //           ),
-      //           hintText: 'Arama yap',
-      //           border:
-      //               OutlineInputBorder(borderRadius: BorderRadius.circular(5)),
-      //           filled: true,
-      //           fillColor: Renkler.kuyubeyaz,
-      //           contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-      //         ),
-      //       ),
-      //     ),
-      //   ),
-      //   actions: const [
-      //     Padding(
-      //       padding: EdgeInsets.only(right: 10),
-      //       child: Text('BelliBellu',
-      //           style: TextStyle(fontSize: 20, color: Renkler.kahverengi)),
-      //     ),
-      //   ],
-      // ),
-      bottomNavigationBar:
-          context.watch<Altislemprovider>().anahtar
-              ? SafeArea(
-                child: Positioned(
-                  bottom: 0,
-                  child: Animate(
-                    effects: [
-                      SlideEffect(
-                        begin: Offset(0, 2),
-                        delay: Duration(milliseconds: 200),
-                      ),
-                    ],
-                    child: Container(
-                      width: MediaQuery.of(context).size.width - 20,
-                      height: 70,
-                      padding: EdgeInsets.all(7),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          width: 2,
-                          color: Theme.of(context).primaryColor,
+    return PopScope(
+      canPop:
+          !context
+              .watch<Altislemprovider>()
+              .anahtar, // Menü açıksa geri çıkışı engelle
+      onPopInvoked: (didPop) {
+        debugPrint('Geri tuşuna basıldı');
+        if (context.read<Altislemprovider>().anahtar) {
+          debugPrint('Menü kapatılıyor');
+          context.read<Altislemprovider>().changeanahtar();
+        }
+      },
+      child: Scaffold(
+        // appBar: AppBar(
+        //   backgroundColor: Colors.transparent,
+        //   leading: Padding(
+        //     padding: EdgeInsets.only(left: 20),
+        //     child: SizedBox(
+        //       width: 200,
+        //       child: TextField(
+        //         onChanged: (value) {
+        //           // Arama işlemleri burada yazılacak
+        //         },
+        //         decoration: InputDecoration(
+        //           suffixIcon: IconButton(
+        //             icon: Image.asset(
+        //               'lib/icons/aramaiconu.png',
+        //               width: 20,
+        //               color: Renkler.kahverengi,
+        //             ),
+        //             onPressed: () {},
+        //           ),
+        //           hintText: 'Arama yap',
+        //           border:
+        //               OutlineInputBorder(borderRadius: BorderRadius.circular(5)),
+        //           filled: true,
+        //           fillColor: Renkler.kuyubeyaz,
+        //           contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+        //         ),
+        //       ),
+        //     ),
+        //   ),
+        //   actions: const [
+        //     Padding(
+        //       padding: EdgeInsets.only(right: 10),
+        //       child: Text('BelliBellu',
+        //           style: TextStyle(fontSize: 20, color: Renkler.kahverengi)),
+        //     ),
+        //   ],
+        // ),
+        bottomNavigationBar:
+            context.watch<Altislemprovider>().anahtar
+                ? SafeArea(
+                  child: Positioned(
+                    bottom: 0,
+                    child: Animate(
+                      effects: [
+                        SlideEffect(
+                          begin: Offset(0, 2),
+                          delay: Duration(milliseconds: 200),
                         ),
-                      ),
-                      child: Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.delete_outlined, size: 30),
-                                  Text('sil'),
-                                ],
+                      ],
+                      child: Container(
+                        width: MediaQuery.of(context).size.width - 20,
+                        height: 70,
+                        padding: EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            width: 2,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.delete_outlined, size: 30),
+                                    Text('sil'),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.copy_all_outlined, size: 30),
-                                  Text('kopyala'),
-                                ],
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.copy_all_outlined, size: 30),
+                                    Text('kopyala'),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.content_cut_outlined, size: 30),
-                                  Text('kes'),
-                                ],
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.content_cut_outlined, size: 30),
+                                    Text('kes'),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.favorite_border_outlined,
-                                    size: 30,
-                                  ),
-                                  Text('kaydet'),
-                                ],
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.favorite_border_outlined,
+                                      size: 30,
+                                    ),
+                                    Text('kaydet'),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.lock_outlined, size: 30),
-                                  Text('sakla'),
-                                ],
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.lock_outlined, size: 30),
+                                    Text('sakla'),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.drive_file_rename_outline,
-                                    size: 30,
-                                  ),
-                                  Text('adlandir'),
-                                ],
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.drive_file_rename_outline,
+                                      size: 30,
+                                    ),
+                                    Text('adlandir'),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
+                )
+                : SizedBox(),
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(kBottomNavigationBarHeight),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  width: 4,
+                  color: Theme.of(context).primaryColor,
                 ),
-              )
-              : SizedBox(),
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kBottomNavigationBarHeight),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                width: 4,
-                color: Theme.of(context).primaryColor,
               ),
             ),
-          ),
-          child: NavigationBar(
-            labelBehavior:
-                NavigationDestinationLabelBehavior
-                    .alwaysHide, // Label'ı gizle ve boşluğu kaldır
-            indicatorColor: Colors.transparent,
-            height: 60,
-            selectedIndex: navigationShell.currentIndex,
-            onDestinationSelected: navigationShell.goBranch,
-            destinations: [
-              bottomicons(
-                context,
-                index: 0,
-                currentindex: navigationShell.currentIndex,
-                icon: Icons.menu,
-              ),
-              bottomicons(
-                context,
-                index: 1,
-                currentindex: navigationShell.currentIndex,
-                icon: Icons.history,
-              ),
-              bottomicons(
-                context,
-                index: 2,
-                currentindex: navigationShell.currentIndex,
-                icon: Icons.folder,
-              ),
-              bottomicons(
-                context,
-                index: 3,
-                currentindex: navigationShell.currentIndex,
-                icon: Icons.search,
-              ),
-            ],
+            child: NavigationBar(
+              labelBehavior:
+                  NavigationDestinationLabelBehavior
+                      .alwaysHide, // Label'ı gizle ve boşluğu kaldır
+              indicatorColor: Colors.transparent,
+              height: 60,
+              selectedIndex: navigationShell.currentIndex,
+              onDestinationSelected: navigationShell.goBranch,
+              destinations: [
+                bottomicons(
+                  context,
+                  index: 0,
+                  currentindex: navigationShell.currentIndex,
+                  icon: Icons.menu,
+                ),
+                bottomicons(
+                  context,
+                  index: 1,
+                  currentindex: navigationShell.currentIndex,
+                  icon: Icons.history,
+                ),
+                bottomicons(
+                  context,
+                  index: 2,
+                  currentindex: navigationShell.currentIndex,
+                  icon: Icons.folder,
+                ),
+                bottomicons(
+                  context,
+                  index: 3,
+                  currentindex: navigationShell.currentIndex,
+                  icon: Icons.search,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      floatingActionButton: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(100)),
-        child: FloatingActionButton(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(50), // Köşeleri yuvarlat
-          ),
-          onPressed: () {
-            debugPrint('tiklandi');
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Center(
-              child: Image.asset(
-                'assets/temizleyici.png',
-                width: 30,
-                height: 30,
+        floatingActionButton: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(100)),
+          child: FloatingActionButton(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(50), // Köşeleri yuvarlat
+            ),
+            onPressed: () {
+              debugPrint('tiklandi');
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Center(
+                child: Image.asset(
+                  'assets/temizleyici.png',
+                  width: 30,
+                  height: 30,
+                ),
               ),
             ),
           ),
         ),
+        // : null, // Eğer BottomNavigationBar gösterilmeyecekse, null döndür
+        body: navigationShell,
       ),
-      // : null, // Eğer BottomNavigationBar gösterilmeyecekse, null döndür
-      body: navigationShell,
     );
   }
 

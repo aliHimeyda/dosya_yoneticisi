@@ -1,3 +1,4 @@
+import 'package:dosya_gezgini/anasayfaicerigi.dart';
 import 'package:dosya_gezgini/dosya_folder.dart';
 import 'package:dosya_gezgini/folderleragaci.dart';
 import 'package:flutter/material.dart';
@@ -59,15 +60,15 @@ class _AramaState extends State<Arama> {
                       controller: _controller,
                       focusNode: _focusNode,
 
-                      onChanged: context.watch<FileTree>().agactaarama,
+                      onChanged: context.watch<Izinler>().fileTree.agactaarama,
                       decoration: InputDecoration(
                         prefixIcon: IconButton(
                           icon: const Icon(Icons.search, size: 17),
                           onPressed: () async {
-                            Provider.of<FileTree>(
+                            Provider.of<Izinler>(
                               context,
                               listen: false,
-                            ).agactaarama(_controller.text);
+                            ).fileTree.agactaarama(_controller.text);
                           },
                         ),
                         hintText: 'arama yap',
@@ -86,8 +87,8 @@ class _AramaState extends State<Arama> {
             ),
           );
         } else if (index == 1) {
-          if (context.watch<FileTree>().arananfile.isEmpty &&
-              context.watch<FileTree>().arananfolder.isEmpty) {
+          if (context.watch<Izinler>().fileTree.arananfile.isEmpty &&
+              context.watch<Izinler>().fileTree.arananfolder.isEmpty) {
             return Center(
               child: Image.asset(
                 'assets/empty.png',
@@ -98,11 +99,35 @@ class _AramaState extends State<Arama> {
             );
           }
         } else {
-          for (var folder in context.watch<FileTree>().arananfolder) {
-            return Klasor(name: folder.name, path: folder.path, klasor: folder);
+          debugPrint('index: $index');
+          if (context.watch<Izinler>().fileTree.arananfolder.isNotEmpty) {
+            if (index - 1 <=
+                context.watch<Izinler>().fileTree.arananfolder.length) {
+              return Klasor(
+                name:
+                    context
+                        .watch<Izinler>()
+                        .fileTree
+                        .arananfolder[index - 2]
+                        .name,
+                path:
+                    context
+                        .watch<Izinler>()
+                        .fileTree
+                        .arananfolder[index - 2]
+                        .path,
+                klasor:
+                    context.watch<Izinler>().fileTree.arananfolder[index - 2],
+              );
+            }
           }
-          for (var file in context.watch<FileTree>().arananfile) {
-            return Dosya(file: file);
+          if (context.watch<Izinler>().fileTree.arananfile.isNotEmpty) {
+            if (index - 1 <=
+                context.watch<Izinler>().fileTree.arananfile.length) {
+              return Dosya(
+                file: context.watch<Izinler>().fileTree.arananfile[index - 2],
+              );
+            }
           }
         }
       },

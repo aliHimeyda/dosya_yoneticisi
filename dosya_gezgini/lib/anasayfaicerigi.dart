@@ -193,7 +193,7 @@ class Anasayfaicerigi extends StatelessWidget {
                                   .folderchildren[index - 1],
                         );
                       }
-                    } else if (context
+                    }  if (context
                         .watch<Izinler>()
                         .fileTree
                         .root
