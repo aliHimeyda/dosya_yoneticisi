@@ -17,7 +17,7 @@ class _LogosayfasiState extends State<Logosayfasi> {
   @override
   void initState() {
     izinverilmismi();
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 2), () {
       Navigator.pushReplacement(
         // ignore: use_build_context_synchronously
         context,

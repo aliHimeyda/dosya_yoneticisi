@@ -1,9 +1,7 @@
 import 'package:dosya_gezgini/anasayfaicerigi.dart';
-import 'package:dosya_gezgini/dosya_folder.dart';
 import 'package:dosya_gezgini/folderleragaci.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:path/path.dart' as path;
 
 class Arama extends StatefulWidget {
   const Arama({super.key});
@@ -39,97 +37,102 @@ class _AramaState extends State<Arama> {
 
   @override
   Widget build(BuildContext context) {
-    final bool anahtar = false;
-    return ListView.builder(
-      // filitrelenenkelimeler.length + 1
-      itemCount:
-          context.watch<FileTree>().arananfile.length +
-          context.watch<FileTree>().arananfolder.length +
-          2,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 17, bottom: 17),
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width - 30,
-                    height: 35,
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 40),
+              child: StatefulBuilder(
+                builder: (context, setState) {
+                  if (context.watch<Izinler>().fileTree.isSearching) {
+                    return Center(child: CircularProgressIndicator());
+                  }
 
-                      onChanged: context.watch<Izinler>().fileTree.agactaarama,
-                      decoration: InputDecoration(
-                        prefixIcon: IconButton(
-                          icon: const Icon(Icons.search, size: 17),
-                          onPressed: () async {
-                            Provider.of<Izinler>(
-                              context,
-                              listen: false,
-                            ).fileTree.agactaarama(_controller.text);
-                          },
-                        ),
-                        hintText: 'arama yap',
-                        focusColor: Theme.of(context).primaryColor,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(7),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(context).primaryColor,
-                        contentPadding: const EdgeInsets.all(10),
+                  if (context.watch<Izinler>().fileTree.arananfolder.isEmpty &&
+                      context.watch<Izinler>().fileTree.arananfile.isEmpty) {
+                    return Center(
+                      child: Image.asset(
+                        'assets/empty.png',
+                        width: 100,
+                        height: 100,
+                        color: Theme.of(context).primaryColor,
                       ),
-                    ),
-                  ),
-                ],
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount:
+                        context.watch<Izinler>().fileTree.arananfolder.length +
+                        context.watch<Izinler>().fileTree.arananfile.length,
+                    itemBuilder: (context, index) {
+                      if (index <
+                          context
+                              .watch<Izinler>()
+                              .fileTree
+                              .arananfolder
+                              .length) {
+                        return context
+                            .watch<Izinler>()
+                            .fileTree
+                            .arananfolder[index];
+                      } else {
+                        int fileIndex =
+                            index -
+                            context
+                                .watch<Izinler>()
+                                .fileTree
+                                .arananfolder
+                                .length;
+                        return context
+                            .watch<Izinler>()
+                            .fileTree
+                            .arananfile[fileIndex];
+                      }
+                    },
+                  );
+                },
               ),
             ),
-          );
-        } else if (index == 1) {
-          if (context.watch<Izinler>().fileTree.arananfile.isEmpty &&
-              context.watch<Izinler>().fileTree.arananfolder.isEmpty) {
-            return Center(
-              child: Image.asset(
-                'assets/empty.png',
-                width: 100,
-                height: 100,
-                color: Theme.of(context).primaryColor,
+            Positioned(
+              top: 5,
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width - 30,
+                height: 35,
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  onChanged: (text) {
+                    setState(() {
+                      context.read<Izinler>().fileTree.agactaarama(text);
+                    });
+                  },
+                  decoration: InputDecoration(
+                    prefixIcon: IconButton(
+                      icon: const Icon(Icons.search, size: 17),
+                      onPressed: () {
+                        setState(() {
+                          context.read<Izinler>().fileTree.agactaarama(
+                            _controller.text,
+                          );
+                        });
+                      },
+                    ),
+                    hintText: 'Arama yap',
+                    focusColor: Theme.of(context).primaryColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    filled: true,
+                    fillColor: Theme.of(context).primaryColor,
+                    contentPadding: const EdgeInsets.all(10),
+                  ),
+                ),
               ),
-            );
-          }
-        } else {
-          debugPrint('index: $index');
-          if (context.watch<Izinler>().fileTree.arananfolder.isNotEmpty) {
-            if (index - 1 <=
-                context.watch<Izinler>().fileTree.arananfolder.length) {
-              return Klasor(
-                name:
-                    context
-                        .watch<Izinler>()
-                        .fileTree
-                        .arananfolder[index - 2]
-                        .name,
-                path:
-                    context
-                        .watch<Izinler>()
-                        .fileTree
-                        .arananfolder[index - 2]
-                        .path,
-                klasor:
-                    context.watch<Izinler>().fileTree.arananfolder[index - 2],
-              );
-            }
-          }
-          if (context.watch<Izinler>().fileTree.arananfile.isNotEmpty) {
-            if (index - 1 <=
-                context.watch<Izinler>().fileTree.arananfile.length) {
-              return Dosya(
-                file: context.watch<Izinler>().fileTree.arananfile[index - 2],
-              );
-            }
-          }
-        }
+            ),
+          ],
+        );
       },
     );
   }

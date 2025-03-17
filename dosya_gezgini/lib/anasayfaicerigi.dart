@@ -170,7 +170,8 @@ class Anasayfaicerigi extends StatelessWidget {
                               .root
                               .folderchildren
                               .length) {
-                        return Klasor(
+                        return  Klasor(
+                          key: ValueKey(index - 1),
                           name:
                               context
                                   .watch<Izinler>()
@@ -193,7 +194,8 @@ class Anasayfaicerigi extends StatelessWidget {
                                   .folderchildren[index - 1],
                         );
                       }
-                    }  if (context
+                    }
+                    if (context
                         .watch<Izinler>()
                         .fileTree
                         .root
@@ -216,6 +218,7 @@ class Anasayfaicerigi extends StatelessWidget {
                               .filechildren
                               .length) {
                         return Dosya(
+                          key: ValueKey(index - 1),
                           file:
                               context
                                   .watch<Izinler>()

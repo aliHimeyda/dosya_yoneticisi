@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dosya_gezgini/dosya_folder.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 // ignore: depend_on_referenced_packages
@@ -76,49 +77,77 @@ class FolderNode extends ChangeNotifier {
 class FileTree extends ChangeNotifier {
   FolderNode root;
   FileTree(String rootPath) : root = FolderNode("Root", rootPath, [], []);
+  bool isSearching = false; //  Yüklenme durumu icin
 
-  late List<FolderNode> arananfolder = [];
-  late List<File> arananfile = [];
+  late List<Klasor> arananfolder = [];
+  late List<Dosya> arananfile = [];
 
   Future<FolderNode> buildTree() async {
     await _buildTree(root);
     return root;
   }
 
+  Future<void> agactadugumarama(String silinecek) async {
+    await _agactansil(root, silinecek);
+  }
+  void ekraniguncelle(){
+    notifyListeners();
+  }
+  Future<void> _agactansil(FolderNode node, String silinecek) async {
+    if (node.filechildren.isNotEmpty) {
+      for (File child in node.filechildren) {
+        if (pathinfo
+            .basename(child.path)
+            .toLowerCase()
+            .startsWith(silinecek.toLowerCase())) {
+          node.filechildren.remove(child);
+          notifyListeners();
+        }
+      }
+    }
+    if (node.folderchildren.isNotEmpty) {
+      for (FolderNode child in node.folderchildren) {
+        if (child.name.toLowerCase().startsWith(silinecek.toLowerCase())) {
+          node.folderchildren.remove(child);
+          notifyListeners();
+        }
+        await _agactansil(child, silinecek);
+      }
+    }
+  }
+
   Future<void> agactaarama(String aranan) async {
+    isSearching = true;
+    notifyListeners();
+
+    if (aranan.isEmpty) {
+      arananfolder.clear();
+      arananfile.clear();
+      isSearching = false;
+      notifyListeners();
+      return;
+    }
+    arananfolder.clear();
+    arananfile.clear();
     await _agactaarama(root, aranan);
+    isSearching = false;
+    notifyListeners();
   }
 
   Future<void> _agactaarama(FolderNode node, String aranan) async {
-    debugPrint('Arama çalıştı: $aranan');
-
-    if (aranan.isEmpty) {
-      arananfolder = [];
-      arananfile = [];
-      debugPrint('Arama listesi temizlendi');
-      notifyListeners();
-      return; // **Boş aramayı hemen bitir**
+    if (node.name.toLowerCase().startsWith(aranan.toLowerCase())) {
+      arananfolder.add(Klasor(name: node.name, path: node.path, klasor: node));
     }
 
-    if (node.name.toLowerCase().contains(aranan.toLowerCase())) {
-      debugPrint('Eşleşen klasör: ${node.name}');
-      arananfolder.add(node);
-      notifyListeners();
-    }
-
-    // **Dosyaları kontrol et**
     for (File child in node.filechildren) {
       if (pathinfo
           .basename(child.path)
           .toLowerCase()
-          .contains(aranan.toLowerCase())) {
-        debugPrint('Eşleşen dosya: ${pathinfo.basename(child.path)}');
-        arananfile.add(child);
-        notifyListeners();
+          .startsWith(aranan.toLowerCase())) {
+        arananfile.add(Dosya(file: child));
       }
     }
 
-    // **Alt klasörleri kontrol et**
     for (FolderNode child in node.folderchildren) {
       await _agactaarama(child, aranan);
     }
@@ -134,7 +163,7 @@ class FileTree extends ChangeNotifier {
         if (entity is Directory) {
           FolderNode folder = FolderNode(name, entity.path, [], []);
           node.addfolderChild(folder);
-          _buildTree(folder); // Recursive call for subfolders
+          _buildTree(folder);
         } else if (entity is File) {
           File file = File(entity.path);
           node.addfileChild(file);
