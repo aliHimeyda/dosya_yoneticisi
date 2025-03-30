@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dosya_gezgini/altislemprovider.dart';
+import 'package:dosya_gezgini/anasayfaicerigi.dart';
 import 'package:dosya_gezgini/dosyaislemleri.dart';
 import 'package:dosya_gezgini/folderleragaci.dart';
 import 'package:dosya_gezgini/router.dart';
@@ -20,7 +21,6 @@ class Klasor extends StatefulWidget {
     required this.path,
     required this.klasor,
   });
-
   @override
   State<Klasor> createState() => _KlasorState();
 }
@@ -58,6 +58,14 @@ class _KlasorState extends State<Klasor> with AutomaticKeepAliveClientMixin {
             }
           },
           onTap: () {
+            Provider.of<Izinler>(
+              context,
+              listen: false,
+            ).setCurrentFolder(widget.klasor);
+            debugPrint(
+              'acilan klasor : ${Provider.of<Izinler>(context, listen: false).getCurrentFolder!.name}',
+            );
+
             context.push(Paths.klasoricerigisayfasi, extra: widget.klasor);
           },
           child: Container(
@@ -179,7 +187,7 @@ class Dosya extends StatefulWidget {
   State<Dosya> createState() => _DosyaState();
 }
 
-class _DosyaState extends State<Dosya> {
+class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
   late List<String> dosyabilgisi = [];
   @override
   void initState() {
@@ -200,7 +208,17 @@ class _DosyaState extends State<Dosya> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  late bool secilmismi = false;
+  @override
   Widget build(BuildContext context) {
+    if (!context.watch<Altislemprovider>().anahtar) {
+      setState(() {
+        secilmismi = false;
+      });
+    }
+    super.build(context);
     String dosyauzantisi = pathinfo.extension(widget.file.path);
 
     return Center(
@@ -212,6 +230,14 @@ class _DosyaState extends State<Dosya> {
               context,
               listen: false,
             ).changeanahtar();
+            secilmismi = !secilmismi;
+            if (secilmismi) {
+              if (!context.read<Dosyaislemleri>().filelistesi.contains(
+                widget.file,
+              )) {
+                context.read<Dosyaislemleri>().filelistesi.add(widget.file);
+              }
+            }
           },
           onTap: () {
             debugPrint('tiklandi');
@@ -235,6 +261,56 @@ class _DosyaState extends State<Dosya> {
               padding: const EdgeInsets.all(10),
               child: Row(
                 children: [
+                  context.watch<Altislemprovider>().anahtar
+                      ? GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            secilmismi = !secilmismi;
+                          });
+                          if (secilmismi) {
+                            if (!context
+                                .read<Dosyaislemleri>()
+                                .filelistesi
+                                .contains(widget.file)) {
+                              context.read<Dosyaislemleri>().filelistesi.add(
+                                widget.file,
+                              );
+                            }
+                          } else if (context
+                              .read<Dosyaislemleri>()
+                              .filelistesi
+                              .contains(widget.file)) {
+                            context.read<Dosyaislemleri>().filelistesi.remove(
+                              widget.file,
+                            );
+                          }
+                          debugPrint(
+                            'tiklandi  boyut : ${context.read<Dosyaislemleri>().filelistesi.length}',
+                          );
+                        },
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 25,
+                              height: 25,
+                              decoration: BoxDecoration(
+                                color:
+                                    secilmismi
+                                        ? Theme.of(context).primaryColor
+                                        : Colors.transparent,
+                                border: Border.all(
+                                  width: 3,
+                                  color: Theme.of(context).iconTheme.color!,
+                                ),
+
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                          ],
+                        ),
+                      )
+                      : SizedBox(),
                   dosyauzantisi == '.pdf'
                       ? Image.asset('assets/pdf.png', width: 40, height: 40)
                       : dosyauzantisi == '.png' || dosyauzantisi == '.jpg'

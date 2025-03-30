@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dosya_gezgini/main.dart';
 import 'package:path/path.dart' as pathinfo;
 import 'package:dosya_gezgini/dosya_folder.dart';
 import 'package:dosya_gezgini/folderleragaci.dart';
@@ -12,6 +13,31 @@ class Izinler extends ChangeNotifier {
   final String rootPath = "/storage/emulated/0"; // Android'deki temel dizin
   late FileTree fileTree = FileTree(rootPath);
   late bool _izin;
+
+  FolderNode? _currentFolder; // 📌 Şu an içinde bulunduğumuz klasör
+  List<FolderNode> previousFolders = []; // 📌 Önceki klasörleri saklamak için
+
+  /// 📌 **Mevcut klasörü döndüren getter**
+  FolderNode? get getCurrentFolder => _currentFolder;
+
+  /// 📌 **Yeni klasöre girdiğinde önceki klasörü sakla ve güncelle**
+  void setCurrentFolder(FolderNode folder) {
+    if (_currentFolder != null) {
+      previousFolders.add(_currentFolder!); // 🔥 Önceki klasörü listeye ekle
+    }
+    _currentFolder = folder;
+    notifyListeners();
+  }
+
+  /// 📌 **Geri tuşuna basıldığında bir önceki klasöre dön**
+  void goBack() {
+    if (previousFolders.isNotEmpty) {
+      _currentFolder =
+          previousFolders.removeLast(); // 🔥 Önceki klasöre geri dön
+      notifyListeners();
+    }
+  }
+
   Future<bool> get izin async {
     final pref = await SharedPreferences.getInstance();
     bool izinverilmismi = pref.getBool('izinanahtari') ?? false;
@@ -170,7 +196,7 @@ class Anasayfaicerigi extends StatelessWidget {
                               .root
                               .folderchildren
                               .length) {
-                        return  Klasor(
+                        return Klasor(
                           key: ValueKey(index - 1),
                           name:
                               context

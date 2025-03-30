@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'package:dosya_gezgini/anasayfaicerigi.dart';
 import 'package:dosya_gezgini/dosya_folder.dart';
+import 'package:dosya_gezgini/main.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path/path.dart' as pathinfo;
+import 'package:provider/provider.dart';
 
 class FolderNode extends ChangeNotifier {
   String name;
@@ -11,12 +14,19 @@ class FolderNode extends ChangeNotifier {
   List<FolderNode> folderchildren;
   List<File> filechildren;
   DateTime? olusumtarihi;
+  FolderNode? parent;
   String get formatlanmistarih {
     if (olusumtarihi == null) return "Bilinmiyor";
     return DateFormat('dd/MM/yyyy HH:mm').format(olusumtarihi!);
   }
 
-  FolderNode(this.name, this.path, this.folderchildren, this.filechildren) {
+  FolderNode(
+    this.name,
+    this.path,
+    this.folderchildren,
+    this.filechildren,
+    this.parent,
+  ) {
     _olusumtarihi();
     debugPrint('$name isimli klasör $path konumuna yerleştirildi');
   }
@@ -41,6 +51,16 @@ class FolderNode extends ChangeNotifier {
       );
       notifyListeners();
     }
+  }
+
+  bool removeNode(String targetPath) {
+    // 🔥 Eğer silinmek istenen bir alt klasörse, onu bulup kaldır
+    folderchildren.removeWhere((folder) => folder.path == targetPath);
+
+    // 🔥 Eğer silinmek istenen bir dosyaysa, onu bulup kaldır
+    filechildren.removeWhere((file) => file.path == targetPath);
+
+    return true; // 📌 Silme başarılı oldu
   }
 
   void removefolderChild(FolderNode child) {
@@ -76,7 +96,7 @@ class FolderNode extends ChangeNotifier {
 
 class FileTree extends ChangeNotifier {
   FolderNode root;
-  FileTree(String rootPath) : root = FolderNode("Root", rootPath, [], []);
+  FileTree(String rootPath) : root = FolderNode("Root", rootPath, [], [], null);
   bool isSearching = false; //  Yüklenme durumu icin
 
   late List<Klasor> arananfolder = [];
@@ -90,9 +110,11 @@ class FileTree extends ChangeNotifier {
   Future<void> agactadugumarama(String silinecek) async {
     await _agactansil(root, silinecek);
   }
-  void ekraniguncelle(){
+
+  void ekraniguncelle() {
     notifyListeners();
   }
+
   Future<void> _agactansil(FolderNode node, String silinecek) async {
     if (node.filechildren.isNotEmpty) {
       for (File child in node.filechildren) {
@@ -112,6 +134,19 @@ class FileTree extends ChangeNotifier {
           notifyListeners();
         }
         await _agactansil(child, silinecek);
+      }
+    }
+  }
+
+  Future<FolderNode?> parentiguncelle(
+    FolderNode node,
+    String parentismi,
+  ) async {
+    if (node.name.toLowerCase().startsWith(parentismi.toLowerCase())) {
+      return node;
+    } else if (node.folderchildren.isNotEmpty) {
+      for (FolderNode child in node.folderchildren) {
+        await parentiguncelle(child, parentismi);
       }
     }
   }
@@ -161,7 +196,7 @@ class FileTree extends ChangeNotifier {
       for (var entity in entities) {
         String name = pathinfo.basename(entity.path);
         if (entity is Directory) {
-          FolderNode folder = FolderNode(name, entity.path, [], []);
+          FolderNode folder = FolderNode(name, entity.path, [], [], node);
           node.addfolderChild(folder);
           _buildTree(folder);
         } else if (entity is File) {

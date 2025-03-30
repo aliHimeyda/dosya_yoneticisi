@@ -11,13 +11,10 @@ import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 
-
 final getIt = GetIt.instance; // GetIt örneğini oluştur
 
 void setupLocator() {
-  getIt.registerSingleton<FileTree>(
-    FileTree("/storage/emulated/0"),
-  ); // Provider'ı kaydet
+  getIt.registerSingleton<Izinler>(Izinler()); // Provider'ı kaydet
 }
 
 void main() async {
@@ -36,10 +33,12 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => AppTheme()),
         ChangeNotifierProvider(create: (context) => Dosyaislemleri()),
-        ChangeNotifierProvider(create: (context) => Altislemprovider()..anahtar),
+        ChangeNotifierProvider(
+          create: (context) => Altislemprovider()..anahtar,
+        ),
         ChangeNotifierProvider(create: (context) => FileTree(rootPath)),
         ChangeNotifierProvider(
-          create: (context) => FolderNode('name', rootPath, [], []),
+          create: (context) => FolderNode('name', rootPath, [], [], null),
         ),
         ChangeNotifierProvider(
           create: (context) => Izinler()..requestAllStoragePermission(),

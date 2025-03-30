@@ -89,8 +89,7 @@ final router = GoRouter(
             GoRoute(
               path: Paths.klasoricerigisayfasi,
               builder: (context, state) {
-                final klasor = state.extra as FolderNode;
-                return Klasoricerigisayfasi(klasor: klasor);
+                return Klasoricerigisayfasi();
               },
             ),
           ],
