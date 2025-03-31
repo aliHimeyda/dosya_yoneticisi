@@ -13,27 +13,40 @@ class Izinler extends ChangeNotifier {
   final String rootPath = "/storage/emulated/0"; // Android'deki temel dizin
   late FileTree fileTree = FileTree(rootPath);
   late bool _izin;
+  List<String>? _currentFolderPath;
 
-  FolderNode? _currentFolder; // 📌 Şu an içinde bulunduğumuz klasör
-  List<FolderNode> previousFolders = []; // 📌 Önceki klasörleri saklamak için
+  List<String>? get getcurrentFolderPath {
+    List<String> konumlistesi =
+        _currentFolder == null
+            ? ['kok dizin']
+            : _currentFolder!.path.split('/').sublist(4);
+    _currentFolderPath = konumlistesi;
+    return _currentFolderPath;
+  }
 
-  /// 📌 **Mevcut klasörü döndüren getter**
+  FolderNode? _currentFolder;
+  List<FolderNode> previousFolders = [];
+
   FolderNode? get getCurrentFolder => _currentFolder;
 
-  /// 📌 **Yeni klasöre girdiğinde önceki klasörü sakla ve güncelle**
+  void klasorekle(FolderNode folder) {
+    _currentFolder!.folderchildren.add(folder);
+    notifyListeners();
+  }
+
   void setCurrentFolder(FolderNode folder) {
     if (_currentFolder != null) {
-      previousFolders.add(_currentFolder!); // 🔥 Önceki klasörü listeye ekle
+      if (!previousFolders.contains(folder)) {
+        previousFolders.add(_currentFolder!);
+      }
     }
     _currentFolder = folder;
     notifyListeners();
   }
 
-  /// 📌 **Geri tuşuna basıldığında bir önceki klasöre dön**
   void goBack() {
     if (previousFolders.isNotEmpty) {
-      _currentFolder =
-          previousFolders.removeLast(); // 🔥 Önceki klasöre geri dön
+      _currentFolder = previousFolders.removeLast();
       notifyListeners();
     }
   }
@@ -66,7 +79,7 @@ class Izinler extends ChangeNotifier {
     var status = await Permission.manageExternalStorage.status;
 
     if (status.isGranted) {
-      print("✅ Tüm dosyalara erişim izni zaten verilmiş.");
+      print(" Tüm dosyalara erişim izni zaten verilmiş.");
       setIzin(true);
       notifyListeners();
 
@@ -78,7 +91,7 @@ class Izinler extends ChangeNotifier {
     var newStatus = await Permission.manageExternalStorage.request();
 
     if (newStatus.isGranted) {
-      print("✅ İzin başarıyla alındı!");
+      print(" İzin başarıyla alındı!");
       setIzin(true);
       notifyListeners();
       // String rootPath = "/storage/emulated/0"; // Android'deki temel dizin
@@ -87,11 +100,11 @@ class Izinler extends ChangeNotifier {
       await fileTree.buildTree();
       // await fileTree.printTree();
     } else if (newStatus.isDenied) {
-      print("⛔ Kullanıcı izni reddetti!");
+      print(" Kullanıcı izni reddetti!");
       setIzin(false);
       notifyListeners();
     } else {
-      print("🚫 Kullanıcı kalıcı olarak reddetti, ayarlara yönlendiriliyor...");
+      print(" Kullanıcı kalıcı olarak reddetti, ayarlara yönlendiriliyor...");
       await openAppSettings();
       if (newStatus.isGranted) {
         setIzin(true);

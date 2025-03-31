@@ -3,6 +3,8 @@ import 'package:dosya_gezgini/anasayfaicerigi.dart';
 import 'package:dosya_gezgini/arama.dart';
 import 'package:dosya_gezgini/dosyalar.dart';
 import 'package:dosya_gezgini/folderleragaci.dart';
+import 'package:dosya_gezgini/gizlidosyalar.dart';
+import 'package:dosya_gezgini/kaydedilendosyalar.dart';
 import 'package:dosya_gezgini/klasoricerigisayfasi.dart';
 import 'package:dosya_gezgini/menu.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +20,8 @@ class Paths {
   static const String dosyalar = '/dosyalar';
   static const String menu = '/menu';
   static const String klasoricerigisayfasi = '/klasoricerigisayfasi';
+  static const String gizlidosyalar = '/gizlidosyalar';
+  static const String kaydedilendosyalar = '/kaydedilendosyalar';
 }
 
 // ignore: non_constant_identifier_names
@@ -90,6 +94,26 @@ final router = GoRouter(
               path: Paths.klasoricerigisayfasi,
               builder: (context, state) {
                 return Klasoricerigisayfasi();
+              },
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: Paths.gizlidosyalar,
+              builder: (context, state) {
+                return Gizlidosyalar();
+              },
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: Paths.kaydedilendosyalar,
+              builder: (context, state) {
+                return Kaydedilendosyalar();
               },
             ),
           ],

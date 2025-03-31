@@ -1,5 +1,8 @@
 // ignore_for_file: avoid_unnecessary_containers
 import 'dart:io';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:dosya_gezgini/anasayfaicerigi.dart';
+import 'package:dosya_gezgini/router.dart';
 import 'package:path/path.dart' as pathinfo;
 import 'package:dosya_gezgini/altislemprovider.dart';
 import 'package:dosya_gezgini/dosyaislemleri.dart';
@@ -20,6 +23,7 @@ class Anasayfa extends StatefulWidget {
 
 class _AnasayfaState extends State<Anasayfa> {
   TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void dispose() {
@@ -30,6 +34,16 @@ class _AnasayfaState extends State<Anasayfa> {
   @override
   Widget build(BuildContext context) {
     late IconData icon = Icons.keyboard_arrow_up;
+
+    if (widget.navigationShell.currentIndex == 2) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+        );
+      });
+    }
     // Mevcut sayfanın yolunu al (Yeni yöntem)
     // final String currentPath = GoRouterState.of(context).uri.toString();
 
@@ -120,7 +134,6 @@ class _AnasayfaState extends State<Anasayfa> {
                               kaydetbutonu(),
                               saklabutonu(),
                               adlandirbutonu(context),
-                              yapistirbutonu(),
                             ],
                           ),
                         ),
@@ -130,52 +143,268 @@ class _AnasayfaState extends State<Anasayfa> {
                 )
                 : SizedBox(),
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(kBottomNavigationBarHeight),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  width: 4,
-                  color: Theme.of(context).primaryColor,
-                ),
-              ),
-            ),
-            child: NavigationBar(
-              labelBehavior:
-                  NavigationDestinationLabelBehavior
-                      .alwaysHide, // Label'ı gizle ve boşluğu kaldır
-              indicatorColor: Colors.transparent,
-              height: 60,
-              selectedIndex: widget.navigationShell.currentIndex,
-              onDestinationSelected: widget.navigationShell.goBranch,
-              destinations: [
-                bottomicons(
-                  context,
-                  index: 0,
-                  currentindex: widget.navigationShell.currentIndex,
-                  icon: Icons.menu,
-                ),
-                bottomicons(
-                  context,
-                  index: 1,
-                  currentindex: widget.navigationShell.currentIndex,
-                  icon: Icons.history,
-                ),
-                bottomicons(
-                  context,
-                  index: 2,
-                  currentindex: widget.navigationShell.currentIndex,
-                  icon: Icons.folder,
-                ),
-                bottomicons(
-                  context,
-                  index: 3,
-                  currentindex: widget.navigationShell.currentIndex,
-                  icon: Icons.search,
-                ),
-              ],
-            ),
-          ),
+          preferredSize: Size.fromHeight(kBottomNavigationBarHeight * 2.1),
+          child:
+              widget.navigationShell.currentIndex == 2
+                  ? Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          width: 0.5,
+                          color: Theme.of(context).iconTheme.color!,
+                        ),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                width: 4,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                          ),
+                          child: NavigationBar(
+                            labelBehavior:
+                                NavigationDestinationLabelBehavior
+                                    .alwaysHide, // Label'ı gizle ve boşluğu kaldır
+                            indicatorColor: Colors.transparent,
+                            height: 60,
+                            selectedIndex: widget.navigationShell.currentIndex,
+                            onDestinationSelected:
+                                widget.navigationShell.goBranch,
+                            destinations: [
+                              bottomicons(
+                                context,
+                                index: 0,
+                                currentindex:
+                                    widget.navigationShell.currentIndex,
+                                icon: Icons.menu,
+                              ),
+                              bottomicons(
+                                context,
+                                index: 1,
+                                currentindex:
+                                    widget.navigationShell.currentIndex,
+                                icon: Icons.history,
+                              ),
+                              bottomicons(
+                                context,
+                                index: 2,
+                                currentindex:
+                                    widget.navigationShell.currentIndex,
+                                icon: Icons.folder,
+                              ),
+                              bottomicons(
+                                context,
+                                index: 3,
+                                currentindex:
+                                    widget.navigationShell.currentIndex,
+                                icon: Icons.search,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Container(
+                              width:
+                                  (MediaQuery.of(context).size.width / 3) * 2,
+                              height: 35,
+                              alignment: Alignment.centerLeft,
+                              padding: EdgeInsets.only(left: 10),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                controller: _scrollController,
+                                child: Wrap(
+                                  alignment: WrapAlignment.start,
+                                  children: [
+                                    for (String path
+                                        in Provider.of<Izinler>(
+                                          context,
+                                          listen: false,
+                                        ).getcurrentFolderPath!)
+                                      Row(
+                                        children: [
+                                          Text(path),
+                                          Icon(Icons.chevron_right),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Theme(
+                              data: Theme.of(context).copyWith(
+                                popupMenuTheme: PopupMenuThemeData(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).secondaryHeaderColor, // Menü arka planı
+                                ),
+                              ),
+                              child: PopupMenuButton<String>(
+                                icon: Icon(Icons.more_vert),
+                                itemBuilder:
+                                    (context) => [
+                                      PopupMenuItem(
+                                        value: 'klasorolustur',
+                                        padding: EdgeInsets.only(
+                                          left: 20,
+                                          right: 20,
+                                        ),
+                                        child: Text(
+                                          'Klasor Olustur',
+                                          style: TextStyle(
+                                            fontSize:
+                                                Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium!
+                                                    .fontSize,
+                                          ),
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        padding: EdgeInsets.only(
+                                          left: 20,
+                                          right: 20,
+                                        ),
+                                        value: 'gizlidosyalar',
+                                        child: Text(
+                                          'Gizli Dosyalar',
+                                          style: TextStyle(
+                                            fontSize:
+                                                Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium!
+                                                    .fontSize,
+                                          ),
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        padding: EdgeInsets.only(
+                                          left: 20,
+                                          right: 20,
+                                        ),
+                                        value: 'kaydedilendosyalar',
+                                        child: Text(
+                                          'kaydedilen Dosyalar',
+                                          style: TextStyle(
+                                            fontSize:
+                                                Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium!
+                                                    .fontSize,
+                                          ),
+                                        ),
+                                      ),
+                                      Provider.of<Dosyaislemleri>(
+                                                context,
+                                                listen: false,
+                                              ).kopyalananfolder.isNotEmpty ||
+                                              Provider.of<Dosyaislemleri>(
+                                                context,
+                                                listen: false,
+                                              ).kopyalananfile.isNotEmpty
+                                          ? PopupMenuItem(
+                                            value: 'yapistir',
+                                            child: Text(
+                                              'yapistir',
+                                              style: TextStyle(
+                                                fontSize:
+                                                    Theme.of(context)
+                                                        .textTheme
+                                                        .bodyMedium!
+                                                        .fontSize,
+                                              ),
+                                            ),
+                                          )
+                                          : PopupMenuItem(
+                                            height: 0,
+                                            child: SizedBox(),
+                                          ),
+                                    ],
+                                onSelected: (value) {
+                                  if (value == 'klasorolustur') {
+                                    Provider.of<Dosyaislemleri>(
+                                      context,
+                                      listen: false,
+                                    ).klasorekle(
+                                      Provider.of<Izinler>(
+                                        context,
+                                        listen: false,
+                                      ).getCurrentFolder!,
+                                      context,
+                                      'yeni klasor',
+                                    );
+                                  } else if (value == 'gizlidosyalar') {
+                                    String sifre = '';
+                                    gizlidosyalarsifresisorgulama(
+                                      context,
+                                      sifre,
+                                    );
+                                  } else if (value == 'yapistir') {
+                                    // Silme işlemi
+                                  } else if (value == 'kaydedilendosyalar') {
+                                    context.push(Paths.kaydedilendosyalar);
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )
+                  : Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          width: 4,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ),
+                    child: NavigationBar(
+                      labelBehavior:
+                          NavigationDestinationLabelBehavior
+                              .alwaysHide, // Label'ı gizle ve boşluğu kaldır
+                      indicatorColor: Colors.transparent,
+                      height: 60,
+                      selectedIndex: widget.navigationShell.currentIndex,
+                      onDestinationSelected: widget.navigationShell.goBranch,
+                      destinations: [
+                        bottomicons(
+                          context,
+                          index: 0,
+                          currentindex: widget.navigationShell.currentIndex,
+                          icon: Icons.menu,
+                        ),
+                        bottomicons(
+                          context,
+                          index: 1,
+                          currentindex: widget.navigationShell.currentIndex,
+                          icon: Icons.history,
+                        ),
+                        bottomicons(
+                          context,
+                          index: 2,
+                          currentindex: widget.navigationShell.currentIndex,
+                          icon: Icons.folder,
+                        ),
+                        bottomicons(
+                          context,
+                          index: 3,
+                          currentindex: widget.navigationShell.currentIndex,
+                          icon: Icons.search,
+                        ),
+                      ],
+                    ),
+                  ),
         ),
         floatingActionButton: Container(
           width: 60,
@@ -234,6 +463,124 @@ class _AnasayfaState extends State<Anasayfa> {
     );
   }
 
+  Future<dynamic> gizlidosyalarsifresisorgulama(
+    BuildContext context,
+    String sifre,
+  ) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
+        ), // Köşeleri yuvarlat
+      ),
+      builder:
+          (context) => Container(
+            padding: EdgeInsets.only(
+              top: 20,
+              left: 20,
+              right: 20,
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Animate(
+                    effects: [
+                      FadeEffect(duration: Duration(milliseconds: 100)),
+                    ],
+                    child: Container(
+                      width: MediaQuery.of(context).size.width - 20,
+                      height: MediaQuery.of(context).size.height / 10,
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            width: 0.3,
+                            color: Theme.of(context).iconTheme.color!,
+                          ),
+                          top: BorderSide(
+                            width: 1,
+                            color: Theme.of(context).iconTheme.color!,
+                          ),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.lock,
+                              color: Theme.of(context).primaryColor,
+                              size: 50,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: _controller,
+                                decoration: InputDecoration(
+                                  hintText: 'Sifreyi Giriniz',
+                                  hintStyle:
+                                      Theme.of(context).textTheme.bodyLarge,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        sifre = _controller.text;
+                        _controller.text = '';
+                        if (sifre == 'alihimeyda') {
+                          context.push(Paths.gizlidosyalar);
+                          Navigator.pop(context);
+                        } else {
+                          Navigator.pop(context);
+                          Fluttertoast.showToast(
+                            msg: "Sifre Hatali",
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.TOP,
+                            timeInSecForIosWeb: 10,
+                            backgroundColor:
+                                Theme.of(context).secondaryHeaderColor,
+                            textColor:
+                                Theme.of(context).textTheme.labelLarge!.color,
+                            fontSize: 16.0,
+                          );
+                        }
+                      }, // Kapatma butonu
+                      child: Text("Tamam"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Provider.of<Dosyaislemleri>(
+                        //   context,
+                        //   listen: false,
+                        // ).sil();
+                        Navigator.pop(context);
+                      }, // Kapatma butonu
+                      child: Text("Iptal"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
   GestureDetector silbutonu(BuildContext context) {
     return GestureDetector(
       onTap: () {
@@ -286,7 +633,9 @@ class _AnasayfaState extends State<Anasayfa> {
 
   GestureDetector kopyalabutonu() {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Provider.of<Dosyaislemleri>(context, listen: false).kopyala(context);
+      },
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -310,7 +659,9 @@ class _AnasayfaState extends State<Anasayfa> {
 
   GestureDetector kaydetbutonu() {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Provider.of<Dosyaislemleri>(context, listen: false).kaydet(context);
+      },
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -330,18 +681,6 @@ class _AnasayfaState extends State<Anasayfa> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [Icon(Icons.lock_outlined, size: 30), Text('sakla')],
-        ),
-      ),
-    );
-  }
-
-  GestureDetector yapistirbutonu() {
-    return GestureDetector(
-      onTap: () {},
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [Icon(Icons.content_paste_go, size: 30), Text('yapistir')],
         ),
       ),
     );
@@ -367,6 +706,7 @@ class _AnasayfaState extends State<Anasayfa> {
             String yeniad;
             showModalBottomSheet(
               context: context,
+              isScrollControlled: true,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(20),
@@ -374,8 +714,15 @@ class _AnasayfaState extends State<Anasayfa> {
               ),
               builder:
                   (context) => Container(
-                    padding: EdgeInsets.all(20),
-                    height: 200,
+                    padding: EdgeInsets.only(
+                      top: 20,
+                      left: 20,
+                      right: 20,
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                    ),
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.8,
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [

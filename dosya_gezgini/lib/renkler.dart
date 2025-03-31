@@ -32,7 +32,7 @@ class AppTheme extends ChangeNotifier {
   static final ThemeData lightMode = ThemeData(
     brightness: Brightness.light, // Tema parlaklığını açık mod olarak ayarlar
     primaryColor: AppColors.kuyupembe, // Uygulamanın ana rengini belirler
-    secondaryHeaderColor: const Color.fromARGB(223, 255, 196, 210),
+    secondaryHeaderColor: const Color.fromARGB(223, 255, 216, 225),
     scaffoldBackgroundColor:
         AppColors.koyuBeyaz, // Sayfanın arka plan rengini belirler
 

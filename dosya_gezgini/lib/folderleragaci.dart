@@ -101,6 +101,10 @@ class FileTree extends ChangeNotifier {
 
   late List<Klasor> arananfolder = [];
   late List<Dosya> arananfile = [];
+  late List<FolderNode> kaydedilenfolder = [];
+  late List<File> kaydedilenfile = [];
+  late List<FolderNode> gizlenenfolder = [];
+  late List<File> gizlenenfile = [];
 
   Future<FolderNode> buildTree() async {
     await _buildTree(root);
