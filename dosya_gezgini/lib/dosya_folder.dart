@@ -66,7 +66,7 @@ class _KlasorState extends State<Klasor> with AutomaticKeepAliveClientMixin {
               'acilan klasor : ${Provider.of<Izinler>(context, listen: false).getCurrentFolder!.name}',
             );
 
-            context.push(Paths.klasoricerigisayfasi, extra: widget.klasor);
+            context.push(Paths.klasoricerigisayfasi);
           },
           child: Container(
             width: MediaQuery.of(context).size.width - 20,

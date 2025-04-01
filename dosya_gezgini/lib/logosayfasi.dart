@@ -1,4 +1,4 @@
-import 'package:dosya_gezgini/anasayfaicerigi.dart';
+
 import 'package:dosya_gezgini/renkler.dart';
 import 'package:dosya_gezgini/router.dart';
 import 'package:flutter/material.dart';

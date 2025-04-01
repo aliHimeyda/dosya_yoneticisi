@@ -1,15 +1,10 @@
-import 'dart:io';
 import 'package:dosya_gezgini/altislemprovider.dart';
 import 'package:dosya_gezgini/anasayfaicerigi.dart';
 import 'package:dosya_gezgini/dosyaislemleri.dart';
-import 'package:path/path.dart' as pathinfo;
 import 'package:dosya_gezgini/dosya_folder.dart';
-import 'package:dosya_gezgini/folderleragaci.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class Gizlidosyalar extends StatelessWidget {
   const Gizlidosyalar({super.key});

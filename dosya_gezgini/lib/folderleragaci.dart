@@ -1,12 +1,8 @@
 import 'dart:io';
-import 'package:dosya_gezgini/anasayfaicerigi.dart';
 import 'package:dosya_gezgini/dosya_folder.dart';
-import 'package:dosya_gezgini/main.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-// ignore: depend_on_referenced_packages
 import 'package:path/path.dart' as pathinfo;
-import 'package:provider/provider.dart';
 
 class FolderNode extends ChangeNotifier {
   String name;
@@ -105,6 +101,76 @@ class FileTree extends ChangeNotifier {
   late List<File> kaydedilenfile = [];
   late List<FolderNode> gizlenenfolder = [];
   late List<File> gizlenenfile = [];
+  late FolderNode bilinmeyendosya = FolderNode(
+    'bilinmeyen dosyalar',
+    'bilinmeyen dosyalar',
+    [],
+    [],
+    root,
+  );
+  late FolderNode exceldosya = FolderNode(
+    'excel dosyalari',
+    'excel dosyalari',
+    [],
+    [],
+    root,
+  );
+  late FolderNode resimdosya = FolderNode(
+    'resim dosyalari',
+    'resim dosyalari',
+    [],
+    [],
+    root,
+  );
+  late FolderNode videodosya = FolderNode(
+    'video dosyalari',
+    'video dosyalari',
+    [],
+    [],
+    root,
+  );
+  late FolderNode sesdosya = FolderNode(
+    'ses dosyalari',
+    'ses dosyalari',
+    [],
+    [],
+    root,
+  );
+  late FolderNode worddosya = FolderNode(
+    'word dosyalari',
+    'word dosyalari',
+    [],
+    [],
+    root,
+  );
+  late FolderNode zipdosya = FolderNode(
+    'zip dosyalari',
+    'zip dosyalari',
+    [],
+    [],
+    root,
+  );
+  late FolderNode pdfdosya = FolderNode(
+    'pdf dosyalari',
+    'pdf dosyalari',
+    [],
+    [],
+    root,
+  );
+  late FolderNode txtdosya = FolderNode(
+    'txt dosyalari',
+    'txt dosyalari',
+    [],
+    [],
+    root,
+  );
+  late FolderNode powerpointdosya = FolderNode(
+    'powerpoint dosyalari',
+    'powerpoint dosyalari',
+    [],
+    [],
+    root,
+  );
 
   Future<FolderNode> buildTree() async {
     await _buildTree(root);
@@ -206,6 +272,56 @@ class FileTree extends ChangeNotifier {
         } else if (entity is File) {
           File file = File(entity.path);
           node.addfileChild(file);
+          String dosyauzantisi = pathinfo.extension(file.path);
+          if (dosyauzantisi == '.pdf') {
+            pdfdosya.filechildren.add(file);
+            debugPrint(
+              'pdf dosyasi eklendi------------------------------------',
+            );
+          } else if (dosyauzantisi == '.zip') {
+            zipdosya.filechildren.add(file);
+            debugPrint(
+              'zip dosyasi eklendi------------------------------------',
+            );
+          } else if (dosyauzantisi == '.mp4') {
+            videodosya.filechildren.add(file);
+            debugPrint(
+              'video dosyasi eklendi------------------------------------',
+            );
+          } else if (dosyauzantisi == '.mp3') {
+            sesdosya.filechildren.add(file);
+            debugPrint(
+              'ses dosyasi eklendi------------------------------------',
+            );
+          } else if (dosyauzantisi == '.txt') {
+            txtdosya.filechildren.add(file);
+            debugPrint('dosyasi eklendi------------------------------------');
+          } else if (dosyauzantisi == '.ppt' || dosyauzantisi == '.pptx') {
+            powerpointdosya.filechildren.add(file);
+            debugPrint(
+              'pow dosyasi eklendi------------------------------------',
+            );
+          } else if (dosyauzantisi == '.xls' || dosyauzantisi == '.xlsx') {
+            exceldosya.filechildren.add(file);
+            debugPrint(
+              'excel dosyasi eklendi------------------------------------',
+            );
+          } else if (dosyauzantisi == '.docx' || dosyauzantisi == '.doc') {
+            worddosya.filechildren.add(file);
+            debugPrint(
+              'worddosyasi eklendi------------------------------------',
+            );
+          } else if (dosyauzantisi == '.jpg' || dosyauzantisi == '.png') {
+            resimdosya.filechildren.add(file);
+            debugPrint(
+              'resim dosyasi eklendi------------------------------------',
+            );
+          } else {
+            bilinmeyendosya.filechildren.add(file);
+            debugPrint(
+              'bilinm dosyasi eklendi------------------------------------',
+            );
+          }
         }
       }
     } catch (e) {

@@ -2,11 +2,12 @@ import 'package:dosya_gezgini/anasayfa.dart';
 import 'package:dosya_gezgini/anasayfaicerigi.dart';
 import 'package:dosya_gezgini/arama.dart';
 import 'package:dosya_gezgini/dosyalar.dart';
-import 'package:dosya_gezgini/folderleragaci.dart';
 import 'package:dosya_gezgini/gizlidosyalar.dart';
+import 'package:dosya_gezgini/katagorikicerik.dart';
 import 'package:dosya_gezgini/kaydedilendosyalar.dart';
 import 'package:dosya_gezgini/klasoricerigisayfasi.dart';
 import 'package:dosya_gezgini/menu.dart';
+import 'package:dosya_gezgini/temizliksayfasi.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,6 +23,8 @@ class Paths {
   static const String klasoricerigisayfasi = '/klasoricerigisayfasi';
   static const String gizlidosyalar = '/gizlidosyalar';
   static const String kaydedilendosyalar = '/kaydedilendosyalar';
+  static const String temizliksayfasi = '/temizliksayfasi';
+  static const String katagorikicerik = '/katagorikicerik';
 }
 
 // ignore: non_constant_identifier_names
@@ -114,6 +117,26 @@ final router = GoRouter(
               path: Paths.kaydedilendosyalar,
               builder: (context, state) {
                 return Kaydedilendosyalar();
+              },
+            ),
+          ],
+        ),
+         StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: Paths.temizliksayfasi,
+              builder: (context, state) {
+                return Temizliksayfasi();
+              },
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: Paths.katagorikicerik,
+              builder: (context, state) {
+                return Katagorikicerik();
               },
             ),
           ],

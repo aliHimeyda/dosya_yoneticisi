@@ -1,8 +1,5 @@
-import 'dart:io';
-
 import 'package:dosya_gezgini/anasayfaicerigi.dart';
 import 'package:dosya_gezgini/dosya_folder.dart';
-import 'package:dosya_gezgini/folderleragaci.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';

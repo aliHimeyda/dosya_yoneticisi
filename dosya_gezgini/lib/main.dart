@@ -4,7 +4,6 @@ import 'package:dosya_gezgini/dosyaislemleri.dart';
 import 'package:dosya_gezgini/folderleragaci.dart';
 import 'package:dosya_gezgini/localestoragebilgileri.dart';
 import 'package:dosya_gezgini/logosayfasi.dart';
-import 'package:dosya_gezgini/menu.dart';
 import 'package:dosya_gezgini/renkler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

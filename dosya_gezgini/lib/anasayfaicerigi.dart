@@ -1,10 +1,9 @@
-import 'dart:io';
-import 'package:dosya_gezgini/main.dart';
-import 'package:path/path.dart' as pathinfo;
 import 'package:dosya_gezgini/dosya_folder.dart';
 import 'package:dosya_gezgini/folderleragaci.dart';
+import 'package:dosya_gezgini/router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -172,16 +171,41 @@ class Anasayfaicerigi extends StatelessWidget {
                           runSpacing: 3,
                           children: [
                             // katagoriiconu('assets/temizleyici.png'),
-                            katagoriiconu('assets/file.png', 'file'),
-                            katagoriiconu('assets/xls.png', 'excel'),
-                            katagoriiconu('assets/image.png', 'resim'),
-                            katagoriiconu('assets/mp4.png', 'video'),
-                            katagoriiconu('assets/mp3.png', 'ses'),
-                            katagoriiconu('assets/doc.png', 'word'),
-                            katagoriiconu('assets/ppt.png', 'powerpoint'),
-                            katagoriiconu('assets/zip.png', 'zip'),
-                            katagoriiconu('assets/pdf.png', 'pdf'),
-                            katagoriiconu('assets/txt.png', 'txt'),
+                            katagoriiconu(
+                              'assets/file.png',
+                              'file',
+                              1,
+                              context,
+                            ),
+                            katagoriiconu(
+                              'assets/xls.png',
+                              'excel',
+                              2,
+                              context,
+                            ),
+                            katagoriiconu(
+                              'assets/image.png',
+                              'resim',
+                              3,
+                              context,
+                            ),
+                            katagoriiconu(
+                              'assets/mp4.png',
+                              'video',
+                              4,
+                              context,
+                            ),
+                            katagoriiconu('assets/mp3.png', 'ses', 5, context),
+                            katagoriiconu('assets/doc.png', 'word', 6, context),
+                            katagoriiconu(
+                              'assets/ppt.png',
+                              'powerpoint',
+                              7,
+                              context,
+                            ),
+                            katagoriiconu('assets/zip.png', 'zip', 8, context),
+                            katagoriiconu('assets/pdf.png', 'pdf', 9, context),
+                            katagoriiconu('assets/txt.png', 'txt', 10, context),
                           ],
                         ),
                       ),
@@ -277,10 +301,81 @@ class Anasayfaicerigi extends StatelessWidget {
     );
   }
 
-  GestureDetector katagoriiconu(String resimyolu, String aciklama) {
+  GestureDetector katagoriiconu(
+    String resimyolu,
+    String aciklama,
+    int index,
+    BuildContext context,
+  ) {
     return GestureDetector(
       onTap: () {
-        debugPrint('tiklandi');
+        if (index == 1) {
+          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
+            Provider.of<Izinler>(
+              context,
+              listen: false,
+            ).fileTree.bilinmeyendosya,
+          );
+          context.push(Paths.klasoricerigisayfasi);
+        } else if (index == 2) {
+          debugPrint(
+            'aciliyor.... ${Provider.of<Izinler>(context, listen: false).fileTree.exceldosya.filechildren.length}',
+          );
+          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
+            Provider.of<Izinler>(context, listen: false).fileTree.exceldosya,
+          );
+          context.push(Paths.klasoricerigisayfasi);
+        } else if (index == 3) {
+          debugPrint('aciliyor....');
+          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
+            Provider.of<Izinler>(context, listen: false).fileTree.resimdosya,
+          );
+          context.push(Paths.klasoricerigisayfasi);
+        } else if (index == 4) {
+          debugPrint('aciliyor....');
+          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
+            Provider.of<Izinler>(context, listen: false).fileTree.videodosya,
+          );
+          context.push(Paths.klasoricerigisayfasi);
+        } else if (index == 5) {
+          debugPrint('aciliyor....');
+          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
+            Provider.of<Izinler>(context, listen: false).fileTree.sesdosya,
+          );
+          context.push(Paths.klasoricerigisayfasi);
+        } else if (index == 6) {
+          debugPrint('aciliyor....');
+          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
+            Provider.of<Izinler>(context, listen: false).fileTree.worddosya,
+          );
+          context.push(Paths.klasoricerigisayfasi);
+        } else if (index == 7) {
+          debugPrint('aciliyor....');
+          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
+            Provider.of<Izinler>(
+              context,
+              listen: false,
+            ).fileTree.powerpointdosya,
+          );
+          context.push(Paths.klasoricerigisayfasi);
+        } else if (index == 8) {
+          debugPrint('aciliyor....');
+          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
+            Provider.of<Izinler>(context, listen: false).fileTree.zipdosya,
+          );
+          context.push(Paths.klasoricerigisayfasi);
+        } else if (index == 9) {
+          debugPrint('aciliyor....');
+          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
+            Provider.of<Izinler>(context, listen: false).fileTree.pdfdosya,
+          );
+          context.push(Paths.klasoricerigisayfasi);
+        } else if (index == 10) {
+          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
+            Provider.of<Izinler>(context, listen: false).fileTree.txtdosya,
+          );
+          context.push(Paths.klasoricerigisayfasi);
+        }
       },
       child: SizedBox(
         width: 80,

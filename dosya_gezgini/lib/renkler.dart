@@ -171,7 +171,7 @@ class AppTheme extends ChangeNotifier {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.acikpembe, // Buton kırmızı
+        backgroundColor: AppColors.kuyupembe, // Buton kırmızı
         foregroundColor: AppColors.siyah,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
