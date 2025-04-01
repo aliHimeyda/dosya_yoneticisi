@@ -5,10 +5,14 @@ import 'package:dosya_gezgini/dosyaislemleri.dart';
 import 'package:dosya_gezgini/folderleragaci.dart';
 import 'package:dosya_gezgini/router.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path/path.dart' as pathinfo;
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:archive/archive_io.dart';
 
 class Klasor extends StatefulWidget {
   final FolderNode klasor;
@@ -239,8 +243,17 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
               }
             }
           },
-          onTap: () {
-            debugPrint('tiklandi');
+          onTap: () async {
+            try {
+              if (dosyauzantisi == '.zip') {
+                await unzipFile(widget.file);
+              } else {
+                debugPrint('${widget.file.path} konumlu dosya aciliyor');
+                await OpenFilex.open(widget.file.path);
+              }
+            } catch (e) {
+              debugPrint('Dosya açılamadı : $e');
+            }
           },
           child: Container(
             width: MediaQuery.of(context).size.width - 20,
@@ -355,5 +368,33 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
         ),
       ),
     );
+  }
+
+  Future<void> unzipFile(File zipFile) async {
+    final directory = await getExternalStorageDirectory();
+    final targetPath = pathinfo.join(directory!.path, "unzip");
+
+    // Eğer klasör yoksa oluştur
+    final targetDir = Directory(targetPath);
+    if (!await targetDir.exists()) {
+      await targetDir.create(recursive: true);
+    }
+
+    // ZIP dosyasını oku
+    final bytes = await zipFile.readAsBytes();
+    final archive = ZipDecoder().decodeBytes(bytes);
+
+    for (final file in archive) {
+      final filename = pathinfo.join(targetPath, file.name);
+      if (file.isFile) {
+        final outFile = File(filename);
+        await outFile.create(recursive: true);
+        await outFile.writeAsBytes(file.content as List<int>);
+      } else {
+        await Directory(filename).create(recursive: true);
+      }
+    }
+
+    print("ZIP başarıyla açıldı: $targetPath");
   }
 }

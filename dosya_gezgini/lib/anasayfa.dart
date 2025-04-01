@@ -133,6 +133,12 @@ class _AnasayfaState extends State<Anasayfa> {
                               kaydetbutonu(),
                               saklabutonu(),
                               adlandirbutonu(context),
+                              context
+                                      .watch<Dosyaislemleri>()
+                                      .filelistesi
+                                      .isNotEmpty
+                                  ? paylasbutonu()
+                                  : SizedBox(),
                             ],
                           ),
                         ),
@@ -606,6 +612,20 @@ class _AnasayfaState extends State<Anasayfa> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [Icon(Icons.lock_outlined, size: 30), Text('sakla')],
+        ),
+      ),
+    );
+  }
+
+  GestureDetector paylasbutonu() {
+    return GestureDetector(
+      onTap: () {
+        Provider.of<Dosyaislemleri>(context, listen: false).dosyalaripaylas();
+      },
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [Icon(Icons.share, size: 30), Text('paylas')],
         ),
       ),
     );

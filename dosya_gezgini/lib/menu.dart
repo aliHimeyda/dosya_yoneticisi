@@ -157,7 +157,11 @@ class _MenuState extends State<Menu> {
               return SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).primaryColor,
+                  ),
+                ),
               ); // İlk değer gelene kadar yükleme göstergesi
             }
             return Text(
@@ -220,7 +224,12 @@ class _MenuState extends State<Menu> {
                   ),
                 ],
               )
-              : CircularProgressIndicator(),
+              : CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).primaryColor,
+                ),
+                constraints: BoxConstraints(minWidth: 10, minHeight: 10),
+              ),
     );
   }
 
@@ -236,7 +245,11 @@ class _MenuState extends State<Menu> {
               return SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).primaryColor,
+                  ),
+                ),
               ); // İlk değer gelene kadar yükleme göstergesi
             }
             return Stack(

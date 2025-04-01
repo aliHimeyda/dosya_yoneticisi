@@ -240,7 +240,7 @@ class FileTree extends ChangeNotifier {
   }
 
   Future<void> _agactaarama(FolderNode node, String aranan) async {
-    if (node.name.toLowerCase().startsWith(aranan.toLowerCase())) {
+    if (node.name.toLowerCase().contains(aranan.toLowerCase())) {
       arananfolder.add(Klasor(name: node.name, path: node.path, klasor: node));
     }
 

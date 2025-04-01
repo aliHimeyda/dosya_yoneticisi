@@ -9,6 +9,7 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 
 class Dosyaislemleri extends ChangeNotifier {
   late List<FolderNode> folderlistesi = [];
@@ -172,6 +173,15 @@ class Dosyaislemleri extends ChangeNotifier {
     Provider.of<Altislemprovider>(context, listen: false).changeanahtar();
     getIt<Izinler>().fileTree.ekraniguncelle();
     notifyListeners();
+  }
+
+  Future<void> dosyalaripaylas() async {
+    List<XFile> paylasilacakdosyalar=[];
+    for (File file in filelistesi) {
+      XFile paylasilacakdosya = XFile(file.path);
+      paylasilacakdosyalar.add(paylasilacakdosya);
+    }
+    await Share.shareXFiles(paylasilacakdosyalar);
   }
 
   void kopyala(context) {

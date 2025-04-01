@@ -15,12 +15,22 @@ class Izinler extends ChangeNotifier {
   List<String>? _currentFolderPath;
 
   List<String>? get getcurrentFolderPath {
-    List<String> konumlistesi =
-        _currentFolder == null
-            ? ['kok dizin']
-            : _currentFolder!.path.split('/').sublist(4);
-    _currentFolderPath = konumlistesi;
-    return _currentFolderPath;
+    List<String> konumlistesi;
+    if (_currentFolder == null) {
+      konumlistesi = ['kok dizin'];
+      _currentFolderPath = konumlistesi;
+      return _currentFolderPath;
+    } else {
+      if (_currentFolder!.path.split('/').length < 3) {
+        konumlistesi = ['kok dizin'];
+        _currentFolderPath = konumlistesi;
+        return _currentFolderPath;
+      } else {
+        konumlistesi = _currentFolder!.path.split('/').sublist(4);
+        _currentFolderPath = konumlistesi;
+        return _currentFolderPath;
+      }
+    }
   }
 
   FolderNode? _currentFolder;
