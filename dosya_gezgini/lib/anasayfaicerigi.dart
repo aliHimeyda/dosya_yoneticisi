@@ -162,12 +162,11 @@ class Anasayfaicerigi extends StatelessWidget {
               effects: [SlideEffect(begin: Offset(2, 0))],
               child: ListView.builder(
                 itemCount:
-                    context.watch<Izinler>().fileTree.root.filechildren.length +
+                    context.watch<Izinler>().fileTree.ensongezilenfiles.length +
                     context
                         .watch<Izinler>()
                         .fileTree
-                        .root
-                        .folderchildren
+                        .ensongezilenfolders
                         .length +
                     2,
                 itemBuilder: (context, index) {
@@ -220,87 +219,132 @@ class Anasayfaicerigi extends StatelessWidget {
                         ),
                       ),
                     );
+                  } else if (index == 1) {
+                    return Center(
+                      child: Container(
+                        width: MediaQuery.of(context).size.width - 50,
+                        height: 60,
+                        padding: EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              width: 0.3,
+                              color: Theme.of(context).iconTheme.color!,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          'En Son Gezilenler',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ),
+                    );
                   } else {
                     if (context
                         .watch<Izinler>()
                         .fileTree
-                        .root
-                        .folderchildren
+                        .ensongezilenfolders
                         .isNotEmpty) {
-                      debugPrint(
-                        context
-                            .watch<Izinler>()
-                            .fileTree
-                            .root
-                            .folderchildren
-                            .length
-                            .toString(),
-                      );
                       if (index <=
                           context
                               .watch<Izinler>()
                               .fileTree
-                              .root
-                              .folderchildren
+                              .ensongezilenfolders
                               .length) {
                         return Klasor(
-                          key: ValueKey(index - 1),
+                          key: ValueKey(index - 2),
                           name:
                               context
                                   .watch<Izinler>()
                                   .fileTree
-                                  .root
-                                  .folderchildren[index - 1]
+                                  .ensongezilenfolders[index - 2]
                                   .name,
                           path:
                               context
                                   .watch<Izinler>()
                                   .fileTree
-                                  .root
-                                  .folderchildren[index - 1]
+                                  .ensongezilenfolders[index - 1]
                                   .path,
                           klasor:
                               context
                                   .watch<Izinler>()
                                   .fileTree
-                                  .root
-                                  .folderchildren[index - 1],
+                                  .ensongezilenfolders[index - 1],
                         );
                       }
                     }
                     if (context
                         .watch<Izinler>()
                         .fileTree
-                        .root
-                        .filechildren
+                        .ensongezilenfiles
                         .isNotEmpty) {
-                      debugPrint(
-                        context
-                            .watch<Izinler>()
-                            .fileTree
-                            .root
-                            .filechildren
-                            .length
-                            .toString(),
-                      );
-                      if (index <=
-                          context
-                              .watch<Izinler>()
-                              .fileTree
-                              .root
-                              .filechildren
-                              .length) {
+                      if (index >
+                              context
+                                  .watch<Izinler>()
+                                  .fileTree
+                                  .ensongezilenfolders
+                                  .length &&
+                          index -
+                                  context
+                                      .watch<Izinler>()
+                                      .fileTree
+                                      .ensongezilenfolders
+                                      .length -
+                                  1 <
+                              context
+                                  .watch<Izinler>()
+                                  .fileTree
+                                  .ensongezilenfiles
+                                  .length) {
                         return Dosya(
                           key: ValueKey(index - 1),
                           file:
                               context
                                   .watch<Izinler>()
                                   .fileTree
-                                  .root
-                                  .filechildren[index - 1],
+                                  .ensongezilenfiles[index -
+                                  context
+                                      .watch<Izinler>()
+                                      .fileTree
+                                      .ensongezilenfolders
+                                      .length -
+                                  1],
                         );
                       }
                     }
+                    if (context
+                            .watch<Izinler>()
+                            .fileTree
+                            .ensongezilenfolders
+                            .isEmpty &&
+                        context
+                            .watch<Izinler>()
+                            .fileTree
+                            .ensongezilenfiles
+                            .isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/empty.png',
+                              width: 50,
+                              height: 50,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            Text("Acilan Klasor Yok."),
+                          ],
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: [
+                        SizedBox(height: 10),
+                        Center(
+                          child: Text('----------  Liste Sonu  ----------'),
+                        ),
+                      ],
+                    );
                   }
                 },
               ),

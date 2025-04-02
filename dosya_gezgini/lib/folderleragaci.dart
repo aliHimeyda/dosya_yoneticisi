@@ -101,6 +101,8 @@ class FileTree extends ChangeNotifier {
   late List<File> kaydedilenfile = [];
   late List<FolderNode> gizlenenfolder = [];
   late List<File> gizlenenfile = [];
+  late List<FolderNode> ensongezilenfolders = [];
+  late List<File> ensongezilenfiles = [];
   late FolderNode bilinmeyendosya = FolderNode(
     'bilinmeyen dosyalar',
     'bilinmeyen dosyalar',

@@ -65,6 +65,10 @@ class _KlasorState extends State<Klasor> with AutomaticKeepAliveClientMixin {
             Provider.of<Izinler>(
               context,
               listen: false,
+            ).fileTree.ensongezilenfolders.add(widget.klasor);
+            Provider.of<Izinler>(
+              context,
+              listen: false,
             ).setCurrentFolder(widget.klasor);
             debugPrint(
               'acilan klasor : ${Provider.of<Izinler>(context, listen: false).getCurrentFolder!.name}',
@@ -244,6 +248,10 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
             }
           },
           onTap: () async {
+            Provider.of<Izinler>(
+              context,
+              listen: false,
+            ).fileTree.ensongezilenfiles.add(widget.file);
             try {
               if (dosyauzantisi == '.zip') {
                 await unzipFile(widget.file);
