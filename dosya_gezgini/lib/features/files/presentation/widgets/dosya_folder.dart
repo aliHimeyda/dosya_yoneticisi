@@ -67,9 +67,7 @@ class _KlasorState extends State<Klasor> with AutomaticKeepAliveClientMixin {
             final izinler = Provider.of<Izinler>(context, listen: false);
             izinler.fileTree.ensongezilenfolders.add(widget.klasor);
             await izinler.setCurrentFolder(widget.klasor);
-            debugPrint(
-              'acilan klasor : ${izinler.getCurrentFolder!.name}',
-            );
+            debugPrint('acilan klasor : ${izinler.getCurrentFolder!.name}');
 
             context.push(Paths.klasoricerigisayfasi);
           },
@@ -250,7 +248,8 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
   bool get wantKeepAlive => true;
 
   late bool secilmismi = false;
-  String get _dosyaUzantisi => pathinfo.extension(widget.file.path).toLowerCase();
+  String get _dosyaUzantisi =>
+      pathinfo.extension(widget.file.path).toLowerCase();
   bool get _isImageFile => _imageExtensions.contains(_dosyaUzantisi);
   bool get _isVideoFile => _videoExtensions.contains(_dosyaUzantisi);
 
