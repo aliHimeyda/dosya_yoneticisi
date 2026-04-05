@@ -9,105 +9,31 @@ class Dosyalar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final root = context.watch<Izinler>().fileTree.root;
+    final folders = root.folderchildren;
+    final files = root.filechildren;
+
     return Center(
       child: Animate(
         effects: [SlideEffect(begin: Offset(2, 0))],
         child: ListView.builder(
-          itemCount:
-              context.watch<Izinler>().fileTree.root.filechildren.length +
-              context.watch<Izinler>().fileTree.root.folderchildren.length,
+          itemCount: files.length + folders.length,
           itemBuilder: (context, index) {
-            if (context
-                .watch<Izinler>()
-                .fileTree
-                .root
-                .folderchildren
-                .isNotEmpty) {
-              debugPrint(
-                context
-                    .watch<Izinler>()
-                    .fileTree
-                    .root
-                    .folderchildren
-                    .length
-                    .toString(),
+            if (index < folders.length) {
+              final folder = folders[index];
+              return Klasor(
+                name: folder.name,
+                path: folder.path,
+                klasor: folder,
               );
-              debugPrint(
-                context
-                    .watch<Izinler>()
-                    .fileTree
-                    .root
-                    .filechildren
-                    .length
-                    .toString(),
-              );
-              if (index <=
-                  context.watch<Izinler>().fileTree.root.folderchildren.length -
-                      1) {
-                return Klasor(
-                  name:
-                      context
-                          .watch<Izinler>()
-                          .fileTree
-                          .root
-                          .folderchildren[index]
-                          .name,
-                  path:
-                      context
-                          .watch<Izinler>()
-                          .fileTree
-                          .root
-                          .folderchildren[index]
-                          .path,
-                  klasor:
-                      context
-                          .watch<Izinler>()
-                          .fileTree
-                          .root
-                          .folderchildren[index],
-                );
-              }
             }
-            if (context
-                .watch<Izinler>()
-                .fileTree
-                .root
-                .filechildren
-                .isNotEmpty) {
-              debugPrint(
-                context
-                    .watch<Izinler>()
-                    .fileTree
-                    .root
-                    .filechildren
-                    .length
-                    .toString(),
-              );
-              if (index -
-                      context
-                          .watch<Izinler>()
-                          .fileTree
-                          .root
-                          .folderchildren
-                          .length <=
-                  context.watch<Izinler>().fileTree.root.filechildren.length -
-                      1) {
-                return Dosya(
-                  file:
-                      context
-                          .watch<Izinler>()
-                          .fileTree
-                          .root
-                          .filechildren[index -
-                          context
-                              .watch<Izinler>()
-                              .fileTree
-                              .root
-                              .folderchildren
-                              .length],
-                );
-              }
+
+            final fileIndex = index - folders.length;
+            if (fileIndex < files.length) {
+              return Dosya(file: files[fileIndex]);
             }
+
+            return const SizedBox.shrink();
           },
         ),
       ),

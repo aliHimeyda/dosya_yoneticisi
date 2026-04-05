@@ -1,347 +1,307 @@
 import 'dart:io';
-import 'package:dosya_gezgini/features/files/presentation/widgets/dosya_folder.dart';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as pathinfo;
 
 class FolderNode extends ChangeNotifier {
+  FolderNode(
+    this.name,
+    this.path,
+    List<FolderNode>? folderchildren,
+    List<File>? filechildren,
+    this.parent, {
+    this.isVirtual = false,
+    Set<String>? allowedExtensions,
+  }) : folderchildren = folderchildren ?? [],
+       filechildren = filechildren ?? [],
+       allowedExtensions = allowedExtensions ?? const {} {
+    if (!isVirtual) {
+      _olusumtarihi();
+    }
+  }
+
+  final bool isVirtual;
+  final Set<String> allowedExtensions;
+
   String name;
   String path;
   List<FolderNode> folderchildren;
   List<File> filechildren;
   DateTime? olusumtarihi;
   FolderNode? parent;
+
+  int get childCount => folderchildren.length + filechildren.length;
+
   String get formatlanmistarih {
     if (olusumtarihi == null) return "Bilinmiyor";
     return DateFormat('dd/MM/yyyy HH:mm').format(olusumtarihi!);
   }
 
-  FolderNode(
-    this.name,
-    this.path,
-    this.folderchildren,
-    this.filechildren,
-    this.parent,
-  ) {
-    _olusumtarihi();
-    debugPrint('$name isimli klasör $path konumuna yerleştirildi');
-  }
-
   Future<void> _olusumtarihi() async {
     try {
-      FileStat stat = await FileStat.stat(path);
+      final stat = await FileStat.stat(path);
       olusumtarihi = stat.changed;
-      notifyListeners(); // Değişiklikleri bildir
+      notifyListeners();
     } catch (e) {
-      debugPrint("Klasörün oluşturulma tarihi alınamadı: $e");
+      debugPrint("Klasor tarihi okunamadi: $e");
     }
   }
 
-  void addfolderChild(FolderNode child) {
-    if (folderchildren.contains(child)) {
-      throw Exception('Bu klasör zaten mevcut !!!');
-    } else {
-      folderchildren.add(child);
-      debugPrint(
-        '${child.name} isimli klasor $name klasor icine eklendi !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1',
-      );
-      notifyListeners();
-    }
-  }
-
-  bool removeNode(String targetPath) {
-    // 🔥 Eğer silinmek istenen bir alt klasörse, onu bulup kaldır
-    folderchildren.removeWhere((folder) => folder.path == targetPath);
-
-    // 🔥 Eğer silinmek istenen bir dosyaysa, onu bulup kaldır
-    filechildren.removeWhere((file) => file.path == targetPath);
-
-    return true; // 📌 Silme başarılı oldu
-  }
-
-  void removefolderChild(FolderNode child) {
-    folderchildren.remove(child);
-    notifyListeners();
-    throw Exception('Klasör silindi');
-  }
-
-  void addfileChild(File child) {
-    if (filechildren.contains(child)) {
-      throw Exception('Bu dosya zaten mevcut !!!');
-    } else {
-      String named = pathinfo.basename(child.path);
-      filechildren.add(child);
-      debugPrint(
-        '$named isimli dosya $name klasor icine eklendi !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1',
-      );
-
-      notifyListeners();
-    }
-  }
-
-  void removefileChild(File child) {
-    filechildren.remove(child);
+  void replaceChildren({
+    required List<FolderNode> folders,
+    required List<File> files,
+  }) {
+    folderchildren = folders;
+    filechildren = files;
     notifyListeners();
   }
 
   @override
   String toString() {
-    return 'Folder: $name ($path), Created At: $olusumtarihi';
+    return 'Folder: $name ($path)';
   }
 }
 
 class FileTree extends ChangeNotifier {
-  FolderNode root;
-  FileTree(String rootPath) : root = FolderNode("Root", rootPath, [], [], null);
-  bool isSearching = false; //  Yüklenme durumu icin
+  FileTree(this.rootPath) : root = FolderNode("Root", rootPath, [], [], null);
 
-  late List<Klasor> arananfolder = [];
-  late List<Dosya> arananfile = [];
-  late List<FolderNode> kaydedilenfolder = [];
-  late List<File> kaydedilenfile = [];
-  late List<FolderNode> gizlenenfolder = [];
-  late List<File> gizlenenfile = [];
-  late List<FolderNode> ensongezilenfolders = [];
-  late List<File> ensongezilenfiles = [];
-  late FolderNode bilinmeyendosya = FolderNode(
+  static const Set<String> _excelExtensions = {'.xls', '.xlsx'};
+  static const Set<String> _imageExtensions = {'.jpg', '.jpeg', '.png'};
+  static const Set<String> _videoExtensions = {'.mp4', '.mkv', '.avi', '.mov'};
+  static const Set<String> _audioExtensions = {'.mp3', '.wav', '.aac', '.ogg'};
+  static const Set<String> _wordExtensions = {'.doc', '.docx'};
+  static const Set<String> _powerPointExtensions = {'.ppt', '.pptx'};
+  static const Set<String> _zipExtensions = {'.zip', '.rar', '.7z'};
+  static const Set<String> _pdfExtensions = {'.pdf'};
+  static const Set<String> _txtExtensions = {'.txt'};
+  static const Set<String> _knownExtensions = {
+    ..._excelExtensions,
+    ..._imageExtensions,
+    ..._videoExtensions,
+    ..._audioExtensions,
+    ..._wordExtensions,
+    ..._powerPointExtensions,
+    ..._zipExtensions,
+    ..._pdfExtensions,
+    ..._txtExtensions,
+  };
+
+  final String rootPath;
+  final FolderNode root;
+
+  bool isSearching = false;
+
+  final List<FolderNode> arananfolder = [];
+  final List<File> arananfile = [];
+  final List<FolderNode> kaydedilenfolder = [];
+  final List<File> kaydedilenfile = [];
+  final List<FolderNode> gizlenenfolder = [];
+  final List<File> gizlenenfile = [];
+  final List<FolderNode> ensongezilenfolders = [];
+  final List<File> ensongezilenfiles = [];
+
+  late final FolderNode bilinmeyendosya = _createCategoryNode(
     'bilinmeyen dosyalar',
-    'bilinmeyen dosyalar',
-    [],
-    [],
-    root,
   );
-  late FolderNode exceldosya = FolderNode(
+  late final FolderNode exceldosya = _createCategoryNode(
     'excel dosyalari',
-    'excel dosyalari',
-    [],
-    [],
-    root,
+    allowedExtensions: _excelExtensions,
   );
-  late FolderNode resimdosya = FolderNode(
+  late final FolderNode resimdosya = _createCategoryNode(
     'resim dosyalari',
-    'resim dosyalari',
-    [],
-    [],
-    root,
+    allowedExtensions: _imageExtensions,
   );
-  late FolderNode videodosya = FolderNode(
+  late final FolderNode videodosya = _createCategoryNode(
     'video dosyalari',
-    'video dosyalari',
-    [],
-    [],
-    root,
+    allowedExtensions: _videoExtensions,
   );
-  late FolderNode sesdosya = FolderNode(
+  late final FolderNode sesdosya = _createCategoryNode(
     'ses dosyalari',
-    'ses dosyalari',
-    [],
-    [],
-    root,
+    allowedExtensions: _audioExtensions,
   );
-  late FolderNode worddosya = FolderNode(
+  late final FolderNode worddosya = _createCategoryNode(
     'word dosyalari',
-    'word dosyalari',
-    [],
-    [],
-    root,
+    allowedExtensions: _wordExtensions,
   );
-  late FolderNode zipdosya = FolderNode(
+  late final FolderNode zipdosya = _createCategoryNode(
     'zip dosyalari',
-    'zip dosyalari',
-    [],
-    [],
-    root,
+    allowedExtensions: _zipExtensions,
   );
-  late FolderNode pdfdosya = FolderNode(
+  late final FolderNode pdfdosya = _createCategoryNode(
     'pdf dosyalari',
-    'pdf dosyalari',
-    [],
-    [],
-    root,
+    allowedExtensions: _pdfExtensions,
   );
-  late FolderNode txtdosya = FolderNode(
+  late final FolderNode txtdosya = _createCategoryNode(
     'txt dosyalari',
-    'txt dosyalari',
-    [],
-    [],
-    root,
+    allowedExtensions: _txtExtensions,
   );
-  late FolderNode powerpointdosya = FolderNode(
+  late final FolderNode powerpointdosya = _createCategoryNode(
     'powerpoint dosyalari',
-    'powerpoint dosyalari',
-    [],
-    [],
-    root,
+    allowedExtensions: _powerPointExtensions,
   );
+
+  FolderNode _createCategoryNode(
+    String name, {
+    Set<String> allowedExtensions = const {},
+  }) {
+    return FolderNode(
+      name,
+      'virtual:$name',
+      [],
+      [],
+      root,
+      isVirtual: true,
+      allowedExtensions: allowedExtensions,
+    );
+  }
 
   Future<FolderNode> buildTree() async {
-    await _buildTree(root);
+    await loadFolder(root);
     return root;
   }
 
-  Future<void> agactadugumarama(String silinecek) async {
-    await _agactansil(root, silinecek);
+  Future<void> loadFolder(FolderNode folder) async {
+    if (folder.isVirtual) {
+      await _loadCategoryFolder(folder);
+    } else {
+      await _loadDirectoryFolder(folder);
+    }
+    notifyListeners();
+  }
+
+  Future<void> _loadDirectoryFolder(FolderNode folder) async {
+    final dir = Directory(folder.path);
+    if (!await dir.exists()) {
+      folder.replaceChildren(folders: [], files: []);
+      return;
+    }
+
+    final folders = <FolderNode>[];
+    final files = <File>[];
+
+    try {
+      await for (final entity in dir.list(followLinks: false)) {
+        final name = pathinfo.basename(entity.path);
+        if (entity is Directory) {
+          folders.add(FolderNode(name, entity.path, [], [], folder));
+        } else if (entity is File) {
+          files.add(File(entity.path));
+        }
+      }
+    } catch (e) {
+      debugPrint("Klasor okunamadi ${folder.path}: $e");
+    }
+
+    folders.sort(
+      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+    );
+    files.sort(
+      (a, b) => pathinfo
+          .basename(a.path)
+          .toLowerCase()
+          .compareTo(pathinfo.basename(b.path).toLowerCase()),
+    );
+
+    folder.replaceChildren(folders: folders, files: files);
+  }
+
+  Future<void> _loadCategoryFolder(FolderNode folder) async {
+    final files = <File>[];
+    final rootDirectory = Directory(rootPath);
+    if (!await rootDirectory.exists()) {
+      folder.replaceChildren(folders: [], files: []);
+      return;
+    }
+
+    try {
+      await for (final entity in rootDirectory.list(
+        recursive: true,
+        followLinks: false,
+      )) {
+        if (entity is! File) {
+          continue;
+        }
+
+        final file = File(entity.path);
+        final extension = pathinfo.extension(file.path).toLowerCase();
+        final isUnknownCategory =
+            identical(folder, bilinmeyendosya) &&
+            !_knownExtensions.contains(extension);
+        final isKnownCategory = folder.allowedExtensions.contains(extension);
+
+        if (isUnknownCategory || isKnownCategory) {
+          files.add(file);
+        }
+      }
+    } catch (e) {
+      debugPrint("Kategori taramasi basarisiz ${folder.name}: $e");
+    }
+
+    files.sort(
+      (a, b) => pathinfo
+          .basename(a.path)
+          .toLowerCase()
+          .compareTo(pathinfo.basename(b.path).toLowerCase()),
+    );
+    folder.replaceChildren(folders: [], files: files);
   }
 
   void ekraniguncelle() {
     notifyListeners();
   }
 
-  Future<void> _agactansil(FolderNode node, String silinecek) async {
-    if (node.filechildren.isNotEmpty) {
-      for (File child in node.filechildren) {
-        if (pathinfo
-            .basename(child.path)
-            .toLowerCase()
-            .startsWith(silinecek.toLowerCase())) {
-          node.filechildren.remove(child);
-          notifyListeners();
-        }
-      }
-    }
-    if (node.folderchildren.isNotEmpty) {
-      for (FolderNode child in node.folderchildren) {
-        if (child.name.toLowerCase().startsWith(silinecek.toLowerCase())) {
-          node.folderchildren.remove(child);
-          notifyListeners();
-        }
-        await _agactansil(child, silinecek);
-      }
-    }
-  }
-
-  Future<FolderNode?> parentiguncelle(
-    FolderNode node,
-    String parentismi,
-  ) async {
-    if (node.name.toLowerCase().startsWith(parentismi.toLowerCase())) {
-      return node;
-    } else if (node.folderchildren.isNotEmpty) {
-      for (FolderNode child in node.folderchildren) {
-        await parentiguncelle(child, parentismi);
-      }
-    }
-  }
-
   Future<void> agactaarama(String aranan) async {
     isSearching = true;
     notifyListeners();
 
-    if (aranan.isEmpty) {
-      arananfolder.clear();
-      arananfile.clear();
+    arananfolder.clear();
+    arananfile.clear();
+
+    if (aranan.trim().isEmpty) {
       isSearching = false;
       notifyListeners();
       return;
     }
-    arananfolder.clear();
-    arananfile.clear();
-    await _agactaarama(root, aranan);
-    isSearching = false;
-    notifyListeners();
-  }
 
-  Future<void> _agactaarama(FolderNode node, String aranan) async {
-    if (node.name.toLowerCase().contains(aranan.toLowerCase())) {
-      arananfolder.add(Klasor(name: node.name, path: node.path, klasor: node));
+    final query = aranan.toLowerCase();
+    final rootDirectory = Directory(rootPath);
+
+    if (!await rootDirectory.exists()) {
+      isSearching = false;
+      notifyListeners();
+      return;
     }
 
-    for (File child in node.filechildren) {
-      if (pathinfo
-          .basename(child.path)
-          .toLowerCase()
-          .startsWith(aranan.toLowerCase())) {
-        arananfile.add(Dosya(file: child));
-      }
-    }
-
-    for (FolderNode child in node.folderchildren) {
-      await _agactaarama(child, aranan);
-    }
-  }
-
-  Future<void> _buildTree(FolderNode node) async {
-    Directory dir = Directory(node.path);
-    if (!dir.existsSync()) return;
     try {
-      List<FileSystemEntity> entities = dir.listSync();
-      for (var entity in entities) {
-        String name = pathinfo.basename(entity.path);
-        if (entity is Directory) {
-          FolderNode folder = FolderNode(name, entity.path, [], [], node);
-          node.addfolderChild(folder);
-          _buildTree(folder);
-        } else if (entity is File) {
-          File file = File(entity.path);
-          node.addfileChild(file);
-          String dosyauzantisi = pathinfo.extension(file.path);
-          if (dosyauzantisi == '.pdf') {
-            pdfdosya.filechildren.add(file);
-            debugPrint(
-              'pdf dosyasi eklendi------------------------------------',
-            );
-          } else if (dosyauzantisi == '.zip') {
-            zipdosya.filechildren.add(file);
-            debugPrint(
-              'zip dosyasi eklendi------------------------------------',
-            );
-          } else if (dosyauzantisi == '.mp4') {
-            videodosya.filechildren.add(file);
-            debugPrint(
-              'video dosyasi eklendi------------------------------------',
-            );
-          } else if (dosyauzantisi == '.mp3') {
-            sesdosya.filechildren.add(file);
-            debugPrint(
-              'ses dosyasi eklendi------------------------------------',
-            );
-          } else if (dosyauzantisi == '.txt') {
-            txtdosya.filechildren.add(file);
-            debugPrint('dosyasi eklendi------------------------------------');
-          } else if (dosyauzantisi == '.ppt' || dosyauzantisi == '.pptx') {
-            powerpointdosya.filechildren.add(file);
-            debugPrint(
-              'pow dosyasi eklendi------------------------------------',
-            );
-          } else if (dosyauzantisi == '.xls' || dosyauzantisi == '.xlsx') {
-            exceldosya.filechildren.add(file);
-            debugPrint(
-              'excel dosyasi eklendi------------------------------------',
-            );
-          } else if (dosyauzantisi == '.docx' || dosyauzantisi == '.doc') {
-            worddosya.filechildren.add(file);
-            debugPrint(
-              'worddosyasi eklendi------------------------------------',
-            );
-          } else if (dosyauzantisi == '.jpg' || dosyauzantisi == '.png') {
-            resimdosya.filechildren.add(file);
-            debugPrint(
-              'resim dosyasi eklendi------------------------------------',
-            );
-          } else {
-            bilinmeyendosya.filechildren.add(file);
-            debugPrint(
-              'bilinm dosyasi eklendi------------------------------------',
-            );
-          }
+      await for (final entity in rootDirectory.list(
+        recursive: true,
+        followLinks: false,
+      )) {
+        final entityName = pathinfo.basename(entity.path);
+        final lowerName = entityName.toLowerCase();
+
+        if (entity is Directory && lowerName.contains(query)) {
+          arananfolder.add(FolderNode(entityName, entity.path, [], [], null));
+        } else if (entity is File && lowerName.startsWith(query)) {
+          arananfile.add(File(entity.path));
         }
       }
     } catch (e) {
-      debugPrint("Error reading ${node.path}: $e");
+      debugPrint("Arama sirasinda hata olustu: $e");
     }
+
+    arananfolder.sort(
+      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+    );
+    arananfile.sort(
+      (a, b) => pathinfo
+          .basename(a.path)
+          .toLowerCase()
+          .compareTo(pathinfo.basename(b.path).toLowerCase()),
+    );
+
+    isSearching = false;
+    notifyListeners();
   }
-
-  // Future<void> printTree([FolderNode? node, int level = 0]) async {
-  //   node ??= root;
-  //   debugPrint('$level- ${node.name}');
-  //   for (var child in node.children) {
-  //     await printTree(child, level + 1);
-  //   }
-  // }
-
-  // void agacitanima(BuildContext context) async {
-  //   final izinProvider = Provider.of<Izinler>(context, listen: false);
-  //   izinProvider.requestAllStoragePermission();
-
-  // }
 }

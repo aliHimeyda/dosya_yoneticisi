@@ -235,72 +235,37 @@ class Anasayfaicerigi extends StatelessWidget {
     BuildContext context,
   ) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        final izinler = Provider.of<Izinler>(context, listen: false);
         if (index == 1) {
-          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
-            Provider.of<Izinler>(
-              context,
-              listen: false,
-            ).fileTree.bilinmeyendosya,
-          );
+          await izinler.setCurrentFolder(izinler.fileTree.bilinmeyendosya);
           context.push(Paths.klasoricerigisayfasi);
         } else if (index == 2) {
-          debugPrint(
-            'aciliyor.... ${Provider.of<Izinler>(context, listen: false).fileTree.exceldosya.filechildren.length}',
-          );
-          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
-            Provider.of<Izinler>(context, listen: false).fileTree.exceldosya,
-          );
+          await izinler.setCurrentFolder(izinler.fileTree.exceldosya);
           context.push(Paths.klasoricerigisayfasi);
         } else if (index == 3) {
-          debugPrint('aciliyor....');
-          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
-            Provider.of<Izinler>(context, listen: false).fileTree.resimdosya,
-          );
+          await izinler.setCurrentFolder(izinler.fileTree.resimdosya);
           context.push(Paths.klasoricerigisayfasi);
         } else if (index == 4) {
-          debugPrint('aciliyor....');
-          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
-            Provider.of<Izinler>(context, listen: false).fileTree.videodosya,
-          );
+          await izinler.setCurrentFolder(izinler.fileTree.videodosya);
           context.push(Paths.klasoricerigisayfasi);
         } else if (index == 5) {
-          debugPrint('aciliyor....');
-          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
-            Provider.of<Izinler>(context, listen: false).fileTree.sesdosya,
-          );
+          await izinler.setCurrentFolder(izinler.fileTree.sesdosya);
           context.push(Paths.klasoricerigisayfasi);
         } else if (index == 6) {
-          debugPrint('aciliyor....');
-          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
-            Provider.of<Izinler>(context, listen: false).fileTree.worddosya,
-          );
+          await izinler.setCurrentFolder(izinler.fileTree.worddosya);
           context.push(Paths.klasoricerigisayfasi);
         } else if (index == 7) {
-          debugPrint('aciliyor....');
-          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
-            Provider.of<Izinler>(
-              context,
-              listen: false,
-            ).fileTree.powerpointdosya,
-          );
+          await izinler.setCurrentFolder(izinler.fileTree.powerpointdosya);
           context.push(Paths.klasoricerigisayfasi);
         } else if (index == 8) {
-          debugPrint('aciliyor....');
-          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
-            Provider.of<Izinler>(context, listen: false).fileTree.zipdosya,
-          );
+          await izinler.setCurrentFolder(izinler.fileTree.zipdosya);
           context.push(Paths.klasoricerigisayfasi);
         } else if (index == 9) {
-          debugPrint('aciliyor....');
-          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
-            Provider.of<Izinler>(context, listen: false).fileTree.pdfdosya,
-          );
+          await izinler.setCurrentFolder(izinler.fileTree.pdfdosya);
           context.push(Paths.klasoricerigisayfasi);
         } else if (index == 10) {
-          Provider.of<Izinler>(context, listen: false).setCurrentFolder(
-            Provider.of<Izinler>(context, listen: false).fileTree.txtdosya,
-          );
+          await izinler.setCurrentFolder(izinler.fileTree.txtdosya);
           context.push(Paths.klasoricerigisayfasi);
         }
       },

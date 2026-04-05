@@ -1,4 +1,5 @@
 import 'package:dosya_gezgini/features/files/state/izinler.dart';
+import 'package:dosya_gezgini/features/files/presentation/widgets/dosya_folder.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -71,10 +72,13 @@ class _AramaState extends State<Arama> {
                               .fileTree
                               .arananfolder
                               .length) {
-                        return context
-                            .watch<Izinler>()
-                            .fileTree
-                            .arananfolder[index];
+                        final folder =
+                            context.watch<Izinler>().fileTree.arananfolder[index];
+                        return Klasor(
+                          name: folder.name,
+                          path: folder.path,
+                          klasor: folder,
+                        );
                       } else {
                         int fileIndex =
                             index -
@@ -83,10 +87,13 @@ class _AramaState extends State<Arama> {
                                 .fileTree
                                 .arananfolder
                                 .length;
-                        return context
-                            .watch<Izinler>()
-                            .fileTree
-                            .arananfile[fileIndex];
+                        return Dosya(
+                          file:
+                              context
+                                  .watch<Izinler>()
+                                  .fileTree
+                                  .arananfile[fileIndex],
+                        );
                       }
                     },
                   );

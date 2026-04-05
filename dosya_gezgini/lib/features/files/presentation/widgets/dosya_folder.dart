@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:dosya_gezgini/app/router/app_router.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/dosyaislemleri.dart';
@@ -11,6 +12,7 @@ import 'package:path/path.dart' as pathinfo;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:archive/archive_io.dart';
 
@@ -61,17 +63,12 @@ class _KlasorState extends State<Klasor> with AutomaticKeepAliveClientMixin {
               }
             }
           },
-          onTap: () {
-            Provider.of<Izinler>(
-              context,
-              listen: false,
-            ).fileTree.ensongezilenfolders.add(widget.klasor);
-            Provider.of<Izinler>(
-              context,
-              listen: false,
-            ).setCurrentFolder(widget.klasor);
+          onTap: () async {
+            final izinler = Provider.of<Izinler>(context, listen: false);
+            izinler.fileTree.ensongezilenfolders.add(widget.klasor);
+            await izinler.setCurrentFolder(widget.klasor);
             debugPrint(
-              'acilan klasor : ${Provider.of<Izinler>(context, listen: false).getCurrentFolder!.name}',
+              'acilan klasor : ${izinler.getCurrentFolder!.name}',
             );
 
             context.push(Paths.klasoricerigisayfasi);
@@ -196,10 +193,44 @@ class Dosya extends StatefulWidget {
 }
 
 class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
+  static const double _previewSize = 40;
+  static final Map<String, Future<Uint8List?>> _videoThumbnailCache = {};
+  static const Set<String> _imageExtensions = {
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.webp',
+    '.gif',
+    '.bmp',
+    '.heic',
+  };
+  static const Set<String> _videoExtensions = {
+    '.mp4',
+    '.mkv',
+    '.avi',
+    '.mov',
+    '.m4v',
+    '.webm',
+    '.3gp',
+  };
+
   late List<String> dosyabilgisi = [];
+  Future<Uint8List?>? _videoThumbnailFuture;
+
   @override
   void initState() {
     bilgileriaktar();
+    if (_isVideoFile) {
+      _videoThumbnailFuture = _videoThumbnailCache.putIfAbsent(
+        widget.file.path,
+        () => VideoThumbnail.thumbnailData(
+          video: widget.file.path,
+          imageFormat: ImageFormat.JPEG,
+          maxWidth: 128,
+          quality: 60,
+        ),
+      );
+    }
     super.initState();
   }
 
@@ -219,6 +250,10 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
   bool get wantKeepAlive => true;
 
   late bool secilmismi = false;
+  String get _dosyaUzantisi => pathinfo.extension(widget.file.path).toLowerCase();
+  bool get _isImageFile => _imageExtensions.contains(_dosyaUzantisi);
+  bool get _isVideoFile => _videoExtensions.contains(_dosyaUzantisi);
+
   @override
   Widget build(BuildContext context) {
     if (!context.watch<Altislemprovider>().anahtar) {
@@ -227,7 +262,7 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
       });
     }
     super.build(context);
-    String dosyauzantisi = pathinfo.extension(widget.file.path);
+    final dosyauzantisi = _dosyaUzantisi;
 
     return Center(
       child: Animate(
@@ -248,10 +283,9 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
             }
           },
           onTap: () async {
-            Provider.of<Izinler>(
-              context,
-              listen: false,
-            ).fileTree.ensongezilenfiles.add(widget.file);
+            final izinler = Provider.of<Izinler>(context, listen: false);
+            izinler.fileTree.ensongezilenfiles.add(widget.file);
+            izinler.fileTree.ekraniguncelle();
             try {
               if (dosyauzantisi == '.zip') {
                 await unzipFile(widget.file);
@@ -332,25 +366,7 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
                         ),
                       )
                       : SizedBox(),
-                  dosyauzantisi == '.pdf'
-                      ? Image.asset('assets/pdf.png', width: 40, height: 40)
-                      : dosyauzantisi == '.png' || dosyauzantisi == '.jpg'
-                      ? Image.asset('assets/image.png', width: 40, height: 40)
-                      : dosyauzantisi == '.doc' || dosyauzantisi == '.docx'
-                      ? Image.asset('assets/doc.png', width: 40, height: 40)
-                      : dosyauzantisi == '.xls' || dosyauzantisi == '.xlsx'
-                      ? Image.asset('assets/xls.png', width: 40, height: 40)
-                      : dosyauzantisi == '.ppt' || dosyauzantisi == '.pptx'
-                      ? Image.asset('assets/ppt.png', width: 40, height: 40)
-                      : dosyauzantisi == '.txt'
-                      ? Image.asset('assets/txt.png', width: 40, height: 40)
-                      : dosyauzantisi == '.mp3'
-                      ? Image.asset('assets/mp3.png', width: 40, height: 40)
-                      : dosyauzantisi == '.mp4'
-                      ? Image.asset('assets/mp4.png', width: 40, height: 40)
-                      : dosyauzantisi == '.zip'
-                      ? Image.asset('assets/zip.png', width: 40, height: 40)
-                      : Image.asset('assets/file.png', width: 40, height: 40),
+                  _buildDosyaOnizleme(dosyauzantisi),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -374,6 +390,121 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDosyaOnizleme(String dosyauzantisi) {
+    if (_isImageFile) {
+      return _buildResimOnizleme();
+    }
+
+    if (_isVideoFile && _videoThumbnailFuture != null) {
+      return _buildVideoOnizleme();
+    }
+
+    return _buildVarsayilanIkon(dosyauzantisi);
+  }
+
+  Widget _buildResimOnizleme() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: _previewSize,
+        height: _previewSize,
+        child: Image.file(
+          widget.file,
+          fit: BoxFit.cover,
+          cacheWidth: 120,
+          cacheHeight: 120,
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (wasSynchronouslyLoaded || frame != null) {
+              return child;
+            }
+            return _buildVarsayilanIkon(_dosyaUzantisi);
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return _buildVarsayilanIkon(_dosyaUzantisi);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVideoOnizleme() {
+    return FutureBuilder<Uint8List?>(
+      future: _videoThumbnailFuture,
+      builder: (context, snapshot) {
+        final thumbnail = snapshot.data;
+        if (snapshot.connectionState != ConnectionState.done ||
+            thumbnail == null) {
+          return _buildVarsayilanIkon(_dosyaUzantisi);
+        }
+
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.memory(
+                thumbnail,
+                width: _previewSize,
+                height: _previewSize,
+                fit: BoxFit.cover,
+                cacheWidth: 120,
+                cacheHeight: 120,
+              ),
+            ),
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: Colors.black45,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Icon(
+                Icons.play_arrow,
+                color: Colors.white,
+                size: 12,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildVarsayilanIkon(String dosyauzantisi) {
+    final assetPath =
+        dosyauzantisi == '.pdf'
+            ? 'assets/pdf.png'
+            : _imageExtensions.contains(dosyauzantisi)
+            ? 'assets/image.png'
+            : dosyauzantisi == '.doc' || dosyauzantisi == '.docx'
+            ? 'assets/doc.png'
+            : dosyauzantisi == '.xls' || dosyauzantisi == '.xlsx'
+            ? 'assets/xls.png'
+            : dosyauzantisi == '.ppt' || dosyauzantisi == '.pptx'
+            ? 'assets/ppt.png'
+            : dosyauzantisi == '.txt'
+            ? 'assets/txt.png'
+            : dosyauzantisi == '.mp3'
+            ? 'assets/mp3.png'
+            : _videoExtensions.contains(dosyauzantisi)
+            ? 'assets/mp4.png'
+            : dosyauzantisi == '.zip' ||
+                dosyauzantisi == '.rar' ||
+                dosyauzantisi == '.7z'
+            ? 'assets/zip.png'
+            : 'assets/file.png';
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.asset(
+        assetPath,
+        width: _previewSize,
+        height: _previewSize,
+        fit: BoxFit.cover,
       ),
     );
   }

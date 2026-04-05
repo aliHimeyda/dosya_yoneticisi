@@ -5,7 +5,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Izinler extends ChangeNotifier {
-  Izinler() : fileTree = FileTree(storageRootPath);
+  Izinler() : fileTree = FileTree(storageRootPath) {
+    fileTree.addListener(notifyListeners);
+  }
 
   final FileTree fileTree;
 
@@ -37,10 +39,11 @@ class Izinler extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setCurrentFolder(FolderNode folder) {
+  Future<void> setCurrentFolder(FolderNode folder) async {
     if (_currentFolder != null && !previousFolders.contains(folder)) {
       previousFolders.add(_currentFolder!);
     }
+    await fileTree.loadFolder(folder);
     _currentFolder = folder;
     notifyListeners();
   }
@@ -78,6 +81,7 @@ class Izinler extends ChangeNotifier {
     if (status.isGranted) {
       await setIzin(true);
       await fileTree.buildTree();
+      notifyListeners();
       return;
     }
 
@@ -86,6 +90,7 @@ class Izinler extends ChangeNotifier {
     if (newStatus.isGranted) {
       await setIzin(true);
       await fileTree.buildTree();
+      notifyListeners();
       return;
     }
 
@@ -96,5 +101,11 @@ class Izinler extends ChangeNotifier {
 
     await openAppSettings();
     await setIzin(false);
+  }
+
+  @override
+  void dispose() {
+    fileTree.removeListener(notifyListeners);
+    super.dispose();
   }
 }
