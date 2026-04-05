@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_unnecessary_containers
 import 'dart:io';
+import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:dosya_gezgini/app/router/app_router.dart';
 import 'package:dosya_gezgini/features/files/state/izinler.dart';
@@ -227,24 +228,28 @@ class _AnasayfaState extends State<Anasayfa> {
             index: 0,
             currentindex: widget.navigationShell.currentIndex,
             icon: Icons.menu,
+            label: context.l10n.navigationMenu,
           ),
           bottomicons(
             context,
             index: 1,
             currentindex: widget.navigationShell.currentIndex,
             icon: Icons.history,
+            label: context.l10n.navigationRecent,
           ),
           bottomicons(
             context,
             index: 2,
             currentindex: widget.navigationShell.currentIndex,
             icon: Icons.folder,
+            label: context.l10n.navigationFolders,
           ),
           bottomicons(
             context,
             index: 3,
             currentindex: widget.navigationShell.currentIndex,
             icon: Icons.search,
+            label: context.l10n.navigationSearch,
           ),
         ],
       ),
@@ -290,7 +295,7 @@ class _AnasayfaState extends State<Anasayfa> {
                     value: 'klasorolustur',
                     padding: EdgeInsets.only(left: 20, right: 20),
                     child: Text(
-                      'Klasor Olustur',
+                      context.l10n.createFolder,
                       style: TextStyle(
                         fontSize:
                             Theme.of(context).textTheme.bodyMedium!.fontSize,
@@ -301,7 +306,7 @@ class _AnasayfaState extends State<Anasayfa> {
                     padding: EdgeInsets.only(left: 20, right: 20),
                     value: 'gizlidosyalar',
                     child: Text(
-                      'Gizli Dosyalar',
+                      context.l10n.hiddenFiles,
                       style: TextStyle(
                         fontSize:
                             Theme.of(context).textTheme.bodyMedium!.fontSize,
@@ -312,7 +317,7 @@ class _AnasayfaState extends State<Anasayfa> {
                     padding: EdgeInsets.only(left: 20, right: 20),
                     value: 'kaydedilendosyalar',
                     child: Text(
-                      'kaydedilen Dosyalar',
+                      context.l10n.savedFiles,
                       style: TextStyle(
                         fontSize:
                             Theme.of(context).textTheme.bodyMedium!.fontSize,
@@ -330,7 +335,7 @@ class _AnasayfaState extends State<Anasayfa> {
                       ? PopupMenuItem(
                         value: 'yapistir',
                         child: Text(
-                          'yapistir',
+                          context.l10n.paste,
                           style: TextStyle(
                             fontSize:
                                 Theme.of(
@@ -349,7 +354,7 @@ class _AnasayfaState extends State<Anasayfa> {
                     listen: false,
                   ).getCurrentFolder!,
                   context,
-                  'yeni klasor',
+                  context.l10n.newFolderDefaultName,
                 );
               } else if (value == 'gizlidosyalar') {
                 String sifre = '';
@@ -451,7 +456,7 @@ class _AnasayfaState extends State<Anasayfa> {
                               child: TextField(
                                 controller: _controller,
                                 decoration: InputDecoration(
-                                  hintText: 'Sifreyi Giriniz',
+                                  hintText: context.l10n.passwordHint,
                                   hintStyle:
                                       Theme.of(context).textTheme.bodyLarge,
                                 ),
@@ -477,7 +482,7 @@ class _AnasayfaState extends State<Anasayfa> {
                         } else {
                           Navigator.pop(context);
                           Fluttertoast.showToast(
-                            msg: "Sifre Hatali",
+                            msg: context.l10n.incorrectPassword,
                             toastLength: Toast.LENGTH_SHORT,
                             gravity: ToastGravity.TOP,
                             timeInSecForIosWeb: 10,
@@ -489,7 +494,7 @@ class _AnasayfaState extends State<Anasayfa> {
                           );
                         }
                       }, // Kapatma butonu
-                      child: Text("Tamam"),
+                      child: Text(context.l10n.ok),
                     ),
                     ElevatedButton(
                       onPressed: () {
@@ -499,7 +504,7 @@ class _AnasayfaState extends State<Anasayfa> {
                         // ).sil();
                         Navigator.pop(context);
                       }, // Kapatma butonu
-                      child: Text("Iptal"),
+                      child: Text(context.l10n.cancel),
                     ),
                   ],
                 ),
@@ -528,7 +533,7 @@ class _AnasayfaState extends State<Anasayfa> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "Dikkat , secimler silinecek !",
+                      context.l10n.deleteWarning,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -543,7 +548,7 @@ class _AnasayfaState extends State<Anasayfa> {
                         ).sil(context);
                         Navigator.pop(context);
                       }, // Kapatma butonu
-                      child: Text("Tamam"),
+                      child: Text(context.l10n.ok),
                     ),
                   ],
                 ),
@@ -553,7 +558,7 @@ class _AnasayfaState extends State<Anasayfa> {
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [Icon(Icons.delete_outlined, size: 30), Text('sil')],
+          children: [Icon(Icons.delete_outlined, size: 30), Text(context.l10n.delete)],
         ),
       ),
     );
@@ -567,7 +572,7 @@ class _AnasayfaState extends State<Anasayfa> {
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [Icon(Icons.copy_all_outlined, size: 30), Text('kopyala')],
+          children: [Icon(Icons.copy_all_outlined, size: 30), Text(context.l10n.copy)],
         ),
       ),
     );
@@ -581,7 +586,7 @@ class _AnasayfaState extends State<Anasayfa> {
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [Icon(Icons.content_cut_outlined, size: 30), Text('kes')],
+          children: [Icon(Icons.content_cut_outlined, size: 30), Text(context.l10n.cut)],
         ),
       ),
     );
@@ -597,7 +602,7 @@ class _AnasayfaState extends State<Anasayfa> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.favorite_border_outlined, size: 30),
-            Text('kaydet'),
+            Text(context.l10n.save),
           ],
         ),
       ),
@@ -612,7 +617,7 @@ class _AnasayfaState extends State<Anasayfa> {
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [Icon(Icons.lock_outlined, size: 30), Text('sakla')],
+          children: [Icon(Icons.lock_outlined, size: 30), Text(context.l10n.hide)],
         ),
       ),
     );
@@ -626,7 +631,7 @@ class _AnasayfaState extends State<Anasayfa> {
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [Icon(Icons.share, size: 30), Text('paylas')],
+          children: [Icon(Icons.share, size: 30), Text(context.l10n.share)],
         ),
       ),
     );
@@ -735,7 +740,7 @@ class _AnasayfaState extends State<Anasayfa> {
                                 folders.remove(folder);
                                 Navigator.pop(context);
                               }, // Kapatma butonu
-                              child: Text("Tamam"),
+                              child: Text(context.l10n.ok),
                             ),
                             ElevatedButton(
                               onPressed: () {
@@ -745,7 +750,7 @@ class _AnasayfaState extends State<Anasayfa> {
                                 // ).sil();
                                 Navigator.pop(context);
                               }, // Kapatma butonu
-                              child: Text("Iptal"),
+                              child: Text(context.l10n.cancel),
                             ),
                           ],
                         ),
@@ -896,7 +901,7 @@ class _AnasayfaState extends State<Anasayfa> {
                                 files.remove(file);
                                 Navigator.pop(context);
                               }, // Kapatma butonu
-                              child: Text("Tamam"),
+                              child: Text(context.l10n.ok),
                             ),
                             ElevatedButton(
                               onPressed: () {
@@ -906,7 +911,7 @@ class _AnasayfaState extends State<Anasayfa> {
                                 // ).sil();
                                 Navigator.pop(context);
                               }, // Kapatma butonu
-                              child: Text("Iptal"),
+                              child: Text(context.l10n.cancel),
                             ),
                           ],
                         ),
@@ -922,7 +927,7 @@ class _AnasayfaState extends State<Anasayfa> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.drive_file_rename_outline, size: 30),
-            Text('adlandir'),
+            Text(context.l10n.rename),
           ],
         ),
       ),
@@ -934,6 +939,7 @@ class _AnasayfaState extends State<Anasayfa> {
     required int index,
     required int currentindex,
     required IconData icon,
+    required String label,
   }) {
     return NavigationDestination(
       icon: Icon(
@@ -943,7 +949,7 @@ class _AnasayfaState extends State<Anasayfa> {
                 ? Theme.of(context).primaryColor
                 : Theme.of(context).iconTheme.color,
       ),
-      label: '',
+      label: label,
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/folderleragaci.dart';
 import 'package:dosya_gezgini/features/files/state/izinler.dart';
@@ -39,7 +40,7 @@ class Dosyaislemleri extends ChangeNotifier {
     }
   }
 
-  Future<void> temizlenecekleritoplamaislemi(context) async {
+  Future<void> temizlenecekleritoplamaislemi(BuildContext context) async {
     int silinecekboyut = 0;
     loading = true;
     notifyListeners();
@@ -115,7 +116,7 @@ class Dosyaislemleri extends ChangeNotifier {
     await Future.delayed(Duration(seconds: 2));
   }
 
-  Future<void> sil(context) async {
+  Future<void> sil(BuildContext context) async {
     if (folderlistesi.isNotEmpty) {
       for (FolderNode folder in folderlistesi) {
         try {
@@ -158,7 +159,7 @@ class Dosyaislemleri extends ChangeNotifier {
       }
     }
     Fluttertoast.showToast(
-      msg: "Silme Islemi Basarili :)",
+      msg: context.l10n.deleteSuccess,
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.TOP,
       timeInSecForIosWeb: 10,
@@ -182,7 +183,7 @@ class Dosyaislemleri extends ChangeNotifier {
     await Share.shareXFiles(paylasilacakdosyalar);
   }
 
-  void kopyala(context) {
+  void kopyala(BuildContext context) {
     kopyalananfolder.clear();
     kopyalananfile.clear();
     try {
@@ -203,7 +204,7 @@ class Dosyaislemleri extends ChangeNotifier {
       debugPrint("Kopyalama hatası: $e");
     }
     Fluttertoast.showToast(
-      msg: "Kopyalandi",
+      msg: context.l10n.copied,
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.TOP,
       timeInSecForIosWeb: 10,
@@ -217,7 +218,11 @@ class Dosyaislemleri extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> klasorekle(FolderNode folder, context, String klasoradi) async {
+  Future<void> klasorekle(
+    FolderNode folder,
+    BuildContext context,
+    String klasoradi,
+  ) async {
     try {
       Directory parentDir = Directory(
         Provider.of<Izinler>(context, listen: false).getCurrentFolder!.path,
@@ -259,7 +264,7 @@ class Dosyaislemleri extends ChangeNotifier {
       debugPrint("Ekleme hatası: $e");
     }
     Fluttertoast.showToast(
-      msg: "Yeni Klasor Olusturuldu",
+      msg: context.l10n.newFolderCreated,
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.TOP,
       timeInSecForIosWeb: 10,
@@ -271,7 +276,7 @@ class Dosyaislemleri extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fileekle(File file, context) async {
+  Future<void> fileekle(File file, BuildContext context) async {
     try {
       Directory parentDir = Directory(
         Provider.of<Izinler>(context, listen: false).getCurrentFolder!.path,
@@ -305,7 +310,7 @@ class Dosyaislemleri extends ChangeNotifier {
     }
 
     Fluttertoast.showToast(
-      msg: "Yeni Dosya Eklendi",
+      msg: context.l10n.newFileAdded,
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.TOP,
       timeInSecForIosWeb: 10,
@@ -318,7 +323,11 @@ class Dosyaislemleri extends ChangeNotifier {
     notifyListeners(); // Eğer bu metod içinde bir ChangeNotifier varsa
   }
 
-  Future<void> adlandir(String oldPath, String newName, context) async {
+  Future<void> adlandir(
+    String oldPath,
+    String newName,
+    BuildContext context,
+  ) async {
     String uzanti = '';
     try {
       FileSystemEntity entity;
@@ -361,7 +370,7 @@ class Dosyaislemleri extends ChangeNotifier {
       Provider.of<Altislemprovider>(context, listen: false).changeanahtar();
     }
     Fluttertoast.showToast(
-      msg: "Adlandırma Islemi Basarili :)",
+      msg: context.l10n.renameSuccess,
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.TOP,
       timeInSecForIosWeb: 10,
@@ -372,7 +381,7 @@ class Dosyaislemleri extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> kaydet(context) async {
+  Future<void> kaydet(BuildContext context) async {
     try {
       if (folderlistesi.isNotEmpty) {
         for (FolderNode folder in folderlistesi) {
@@ -397,7 +406,7 @@ class Dosyaislemleri extends ChangeNotifier {
       debugPrint("kaydetme hatası: $e");
     }
     Fluttertoast.showToast(
-      msg: "Kaydedildi",
+      msg: context.l10n.savedSuccess,
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.TOP,
       timeInSecForIosWeb: 10,
@@ -411,7 +420,7 @@ class Dosyaislemleri extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sakla(context) async {
+  Future<void> sakla(BuildContext context) async {
     try {
       if (folderlistesi.isNotEmpty) {
         for (FolderNode folder in folderlistesi) {
@@ -445,7 +454,7 @@ class Dosyaislemleri extends ChangeNotifier {
     }
 
     Fluttertoast.showToast(
-      msg: "Saklandi :)",
+      msg: context.l10n.hiddenSuccess,
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.TOP,
       timeInSecForIosWeb: 10,
@@ -460,7 +469,7 @@ class Dosyaislemleri extends ChangeNotifier {
     notifyListeners();
   }
 
-  void yapistir(context) {
+  void yapistir(BuildContext context) {
     if (kopyalananfolder.isNotEmpty) {
       for (FolderNode folder in kopyalananfolder) {
         klasorekle(folder, context, folder.name);
@@ -477,7 +486,7 @@ class Dosyaislemleri extends ChangeNotifier {
     debugPrint('yapistirma islemi yapildi');
   }
 
-  Future<void> kes(context) async {
+  Future<void> kes(BuildContext context) async {
     //kopyalama islemi .....................
 
     kopyalananfolder.clear();

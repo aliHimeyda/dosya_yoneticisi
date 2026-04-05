@@ -1,4 +1,5 @@
 import 'package:dosya_gezgini/app/app.dart';
+import 'package:dosya_gezgini/core/localization/locale_provider.dart';
 import 'package:dosya_gezgini/core/theme/app_theme.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/dosyaislemleri.dart';
@@ -25,6 +26,7 @@ Widget buildApp() {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => AppTheme()),
+      ChangeNotifierProvider(create: (_) => LocaleProvider()..loadSavedLocale()),
       ChangeNotifierProvider(create: (_) => Dosyaislemleri()),
       ChangeNotifierProvider(create: (_) => Altislemprovider()),
       ChangeNotifierProvider(

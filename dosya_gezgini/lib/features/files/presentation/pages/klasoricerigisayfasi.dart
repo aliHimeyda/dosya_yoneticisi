@@ -1,3 +1,4 @@
+import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
 import 'package:dosya_gezgini/features/files/presentation/widgets/dosya_folder.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/dosyaislemleri.dart';
@@ -11,11 +12,10 @@ class Klasoricerigisayfasi extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return PopScope(
-      canPop:
-          !context
-              .watch<Altislemprovider>()
-              .anahtar, // Menü açıksa geri çıkışı engelle
+      canPop: !context.watch<Altislemprovider>().anahtar,
       onPopInvoked: (didPop) {
         debugPrint('Geri tuşuna basıldı');
 
@@ -23,23 +23,20 @@ class Klasoricerigisayfasi extends StatelessWidget {
         final altIslemProvider = context.read<Altislemprovider>();
         final dosyalisteleri = context.read<Dosyaislemleri>();
 
-        // Eğer menü açıksa önce onu kapat
         if (altIslemProvider.anahtar) {
           debugPrint('Menü kapatılıyor');
           altIslemProvider.changeanahtar();
           dosyalisteleri.folderlistesi.clear();
           dosyalisteleri.filelistesi.clear();
-          return; // İşlemi burada bitir
+          return;
         }
 
-        // Eğer önceki klasör varsa geri dön
         if (izinlerProvider.previousFolders.isNotEmpty) {
           debugPrint('Önceki klasöre dönülüyor');
           izinlerProvider.goBack();
-          return; // İşlemi burada bitir, çıkış yapılmaz
+          return;
         }
 
-        // Eğer önceki klasör yoksa normal pop işlemi gerçekleşsin
         debugPrint('Çıkış yapılıyor');
       },
       child: Center(
@@ -55,7 +52,7 @@ class Klasoricerigisayfasi extends StatelessWidget {
                     .length +
                 1,
             itemBuilder: (context, index) {
-              debugPrint("index :${index.toString()}");
+              debugPrint('index :${index.toString()}');
               if (context
                       .watch<Izinler>()
                       .getCurrentFolder!
@@ -77,7 +74,7 @@ class Klasoricerigisayfasi extends StatelessWidget {
                         height: 50,
                         color: Theme.of(context).primaryColor,
                       ),
-                      Text("Bu klasörde hiç dosya veya dizin yok."),
+                      Text(l10n.folderEmpty),
                     ],
                   ),
                 );

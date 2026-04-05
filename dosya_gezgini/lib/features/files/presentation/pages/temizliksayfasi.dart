@@ -1,3 +1,4 @@
+import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
 import 'package:dosya_gezgini/features/files/state/dosyaislemleri.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -22,12 +23,15 @@ class _TemizliksayfasiState extends State<Temizliksayfasi> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final dosyaIslemleri = context.watch<Dosyaislemleri>();
+
     return Center(
       child: Column(
         spacing: 15,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          context.watch<Dosyaislemleri>().loading
+          dosyaIslemleri.loading
               ? CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
                   Theme.of(context).primaryColor,
@@ -35,9 +39,9 @@ class _TemizliksayfasiState extends State<Temizliksayfasi> {
                 strokeWidth: 7,
                 constraints: BoxConstraints(minWidth: 150, minHeight: 150),
               )
-              : context.watch<Dosyaislemleri>().aramaloading
+              : dosyaIslemleri.aramaloading
               ? Image.asset(
-                'assets/risk.png', // Görselinin yolu
+                'assets/risk.png',
                 height: 150,
                 width: 150,
               )
@@ -48,80 +52,80 @@ class _TemizliksayfasiState extends State<Temizliksayfasi> {
                     curve: Curves.easeInOut,
                   ),
                   SlideEffect(
-                    begin: Offset(-0.3, 0), // soldan başla
-                    end: Offset(0, 0), // merkeze gel
+                    begin: Offset(-0.3, 0),
+                    end: Offset(0, 0),
                     duration: Duration(seconds: 1),
                     curve: Curves.easeInOut,
                   ),
                 ],
                 child: Image.asset(
-                  'assets/true.png', // Görselinin yolu
+                  'assets/true.png',
                   height: 150,
                   width: 150,
                 ),
               ),
-
           SizedBox(height: 50),
-          context.watch<Dosyaislemleri>().loading
+          dosyaIslemleri.loading
               ? Text(
-                'Temizlik Devam Ediyor ...',
+                l10n.cleanupInProgress,
                 style: Theme.of(context).textTheme.bodyLarge,
               )
               : Text(
-                'Islem Sonlandi :)',
+                l10n.operationCompleted,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Gecici Dosyalar Bellekten Alinmasi ',
+                l10n.temporaryFilesCollected,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
-              context.watch<Dosyaislemleri>().gecicidosyalaralinmasi
+              dosyaIslemleri.gecicidosyalaralinmasi
                   ? Image.asset('assets/true.png', height: 15, width: 15)
                   : Text('....', style: Theme.of(context).textTheme.bodyLarge),
             ],
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-
             children: [
               Text(
-                'OnBellek Dosyalarin Alinmasi ',
+                l10n.cacheFilesCollected,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
-              context.watch<Dosyaislemleri>().onbellekdosyalarialinmasi
+              dosyaIslemleri.onbellekdosyalarialinmasi
                   ? Image.asset('assets/true.png', height: 15, width: 15)
                   : Text('....', style: Theme.of(context).textTheme.bodyLarge),
             ],
           ),
-          context.watch<Dosyaislemleri>().gecicidosyalaralinmasi &&
-                  context.watch<Dosyaislemleri>().onbellekdosyalarialinmasi
+          dosyaIslemleri.gecicidosyalaralinmasi &&
+                  dosyaIslemleri.onbellekdosyalarialinmasi
               ? Column(
                 spacing: 5,
                 children: [
                   Text(
-                    '${((context.watch<Dosyaislemleri>().gereksizdosyalartoplamboyutu) / (1024 * 1024)).toStringAsFixed(2)} MB Bosaltilacak',
+                    l10n.cleanupWillFree(
+                      ((dosyaIslemleri.gereksizdosyalartoplamboyutu) /
+                              (1024 * 1024))
+                          .toStringAsFixed(2),
+                    ),
                   ),
                   ElevatedButton(
                     onPressed: () async {
-                      Provider.of<Dosyaislemleri>(
-                        context,
-                        listen: false,
-                      ).gereksizdosyalaritemizle();
+                      context.read<Dosyaislemleri>().gereksizdosyalaritemizle();
                       await Future.delayed(Duration(seconds: 8));
-                      Navigator.pop(context);
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
                     },
                     child:
-                        context.watch<Dosyaislemleri>().gereksizdosyalar.isEmpty
+                        dosyaIslemleri.gereksizdosyalar.isEmpty
                             ? Text(
-                              'Tamam',
+                              l10n.ok,
                               style: Theme.of(context).textTheme.bodyLarge,
                             )
                             : Text(
-                              'Temizle',
+                              l10n.clean,
                               style: Theme.of(context).textTheme.bodyLarge,
                             ),
                   ),

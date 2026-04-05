@@ -1,4 +1,6 @@
 import 'package:dosya_gezgini/app/router/app_router.dart';
+import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
+import 'package:dosya_gezgini/core/localization/locale_provider.dart';
 import 'package:dosya_gezgini/core/theme/app_theme.dart';
 import 'package:dosya_gezgini/features/menu/state/localestoragebilgileri.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +23,7 @@ class Menu extends StatefulWidget {
 }
 
 class _MenuState extends State<Menu> {
-  TextEditingController _controller = TextEditingController();
+  final TextEditingController _controller = TextEditingController();
 
   @override
   void dispose() {
@@ -54,6 +56,8 @@ class _MenuState extends State<Menu> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Center(
       child: Column(
         children: [
@@ -77,10 +81,10 @@ class _MenuState extends State<Menu> {
           ),
           Wrap(
             children: [
-              kareislemsecenegi(context, 'islem', Icons.abc),
-              kareislemsecenegi(context, 'islem', Icons.abc),
-              kareislemsecenegi(context, 'islem', Icons.abc),
-              kareislemsecenegi(context, 'islem', Icons.abc),
+              kareislemsecenegi(context, l10n.actionLabel, Icons.abc),
+              kareislemsecenegi(context, l10n.actionLabel, Icons.abc),
+              kareislemsecenegi(context, l10n.actionLabel, Icons.abc),
+              kareislemsecenegi(context, l10n.actionLabel, Icons.abc),
             ],
           ),
           Animate(
@@ -106,7 +110,7 @@ class _MenuState extends State<Menu> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Tema Modu',
+                            l10n.themeMode,
                             style: Theme.of(context).textTheme.bodyLarge,
                           ),
                         ],
@@ -132,10 +136,64 @@ class _MenuState extends State<Menu> {
               ),
             ),
           ),
-          islemsecenegi(context, Icons.delete_sweep, 'Derin Temizleme', 1),
-          islemsecenegi(context, Icons.lock, 'Ozel Dosyalar', 2),
-          islemsecenegi(context, Icons.favorite, 'favorilenen Dosyalar', 3),
+          dilSecimCubugu(context),
+          islemsecenegi(context, Icons.delete_sweep, l10n.deepCleanup, 1),
+          islemsecenegi(context, Icons.lock, l10n.privateFiles, 2),
+          islemsecenegi(context, Icons.favorite, l10n.savedFiles, 3),
         ],
+      ),
+    );
+  }
+
+  Widget dilSecimCubugu(BuildContext context) {
+    final localeProvider = context.watch<LocaleProvider>();
+
+    return Animate(
+      effects: [FadeEffect(duration: Duration(milliseconds: 100))],
+      child: Container(
+        width: MediaQuery.of(context).size.width - 20,
+        height: MediaQuery.of(context).size.height / 10,
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(width: 0.3, color: AppColors.koyuGri),
+            top: BorderSide(width: 1, color: AppColors.koyuGri),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              Icon(Icons.translate, size: 30),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.languageLabel,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ],
+                ),
+              ),
+              SegmentedButton<String>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment<String>(value: 'tr', label: Text('TR')),
+                  ButtonSegment<String>(value: 'en', label: Text('EN')),
+                  ButtonSegment<String>(value: 'ar', label: Text('AR')),
+                ],
+                selected: {localeProvider.languageCode},
+                onSelectionChanged: (selection) {
+                  context.read<LocaleProvider>().setLanguageCode(
+                    selection.first,
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -465,7 +523,7 @@ class _MenuState extends State<Menu> {
                               child: TextField(
                                 controller: _controller,
                                 decoration: InputDecoration(
-                                  hintText: 'Sifreyi Giriniz',
+                                  hintText: context.l10n.passwordHint,
                                   hintStyle:
                                       Theme.of(context).textTheme.bodyLarge,
                                 ),
@@ -491,7 +549,7 @@ class _MenuState extends State<Menu> {
                         } else {
                           Navigator.pop(context);
                           Fluttertoast.showToast(
-                            msg: "Sifre Hatali",
+                            msg: context.l10n.incorrectPassword,
                             toastLength: Toast.LENGTH_SHORT,
                             gravity: ToastGravity.TOP,
                             timeInSecForIosWeb: 10,
@@ -503,7 +561,7 @@ class _MenuState extends State<Menu> {
                           );
                         }
                       }, // Kapatma butonu
-                      child: Text("Tamam"),
+                      child: Text(context.l10n.ok),
                     ),
                     ElevatedButton(
                       onPressed: () {
@@ -513,7 +571,7 @@ class _MenuState extends State<Menu> {
                         // ).sil();
                         Navigator.pop(context);
                       }, // Kapatma butonu
-                      child: Text("Iptal"),
+                      child: Text(context.l10n.cancel),
                     ),
                   ],
                 ),

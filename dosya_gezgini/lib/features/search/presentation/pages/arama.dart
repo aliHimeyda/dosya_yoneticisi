@@ -1,5 +1,6 @@
-import 'package:dosya_gezgini/features/files/state/izinler.dart';
+import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
 import 'package:dosya_gezgini/features/files/presentation/widgets/dosya_folder.dart';
+import 'package:dosya_gezgini/features/files/state/izinler.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,22 +12,11 @@ class Arama extends StatefulWidget {
 }
 
 class _AramaState extends State<Arama> {
-  TextEditingController _controller = TextEditingController();
+  final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
-  List<String> filitrelenenkelimeler = []; // Filtrelenen kelimeler
+  List<String> filitrelenenkelimeler = [];
 
-  //  void oneribul(String query) {
-
-  //     if (query.isEmpty) {
-  //       filteredWords.value = [];
-  //     } else {
-  //       filteredWords.value =
-  //           aramaonerileri
-  //               .where((word) => word.toLowerCase().contains(query.toLowerCase()))
-  //               .toList();
-  //     }
-  //   }
   @override
   void dispose() {
     _controller.dispose();
@@ -36,6 +26,8 @@ class _AramaState extends State<Arama> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return StatefulBuilder(
       builder: (context, setState) {
         return Stack(
@@ -80,7 +72,7 @@ class _AramaState extends State<Arama> {
                           klasor: folder,
                         );
                       } else {
-                        int fileIndex =
+                        final fileIndex =
                             index -
                             context
                                 .watch<Izinler>()
@@ -124,7 +116,7 @@ class _AramaState extends State<Arama> {
                         });
                       },
                     ),
-                    hintText: 'Arama yap',
+                    hintText: l10n.searchHint,
                     focusColor: Theme.of(context).primaryColor,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(7),

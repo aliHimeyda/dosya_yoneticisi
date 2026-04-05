@@ -1,4 +1,5 @@
 import 'package:dosya_gezgini/app/router/app_router.dart';
+import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
 import 'package:dosya_gezgini/features/files/presentation/widgets/dosya_folder.dart';
 import 'package:dosya_gezgini/features/files/state/izinler.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,8 @@ class Anasayfaicerigi extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Center(
       child: FutureBuilder<bool>(
         future: context.watch<Izinler>().izin,
@@ -23,13 +26,13 @@ class Anasayfaicerigi extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return CircularProgressIndicator();
           } else if (snapshot.hasError) {
-            return Text('Bir hata oluştu');
+            return Text(l10n.errorOccurred);
           } else if (snapshot.hasData && snapshot.data == false) {
             return ElevatedButton(
               onPressed: () {
                 agacitanima(context);
               },
-              child: Text('Ana Sayfa'),
+              child: Text(l10n.tryAgain),
             );
           } else {
             return Animate(
@@ -55,39 +58,64 @@ class Anasayfaicerigi extends StatelessWidget {
                           children: [
                             katagoriiconu(
                               'assets/file.png',
-                              'file',
+                              l10n.categoryFiles,
                               1,
                               context,
                             ),
                             katagoriiconu(
                               'assets/xls.png',
-                              'excel',
+                              l10n.categoryExcel,
                               2,
                               context,
                             ),
                             katagoriiconu(
                               'assets/image.png',
-                              'resim',
+                              l10n.categoryImages,
                               3,
                               context,
                             ),
                             katagoriiconu(
                               'assets/mp4.png',
-                              'video',
+                              l10n.categoryVideos,
                               4,
                               context,
                             ),
-                            katagoriiconu('assets/mp3.png', 'ses', 5, context),
-                            katagoriiconu('assets/doc.png', 'word', 6, context),
+                            katagoriiconu(
+                              'assets/mp3.png',
+                              l10n.categoryAudio,
+                              5,
+                              context,
+                            ),
+                            katagoriiconu(
+                              'assets/doc.png',
+                              l10n.categoryWord,
+                              6,
+                              context,
+                            ),
                             katagoriiconu(
                               'assets/ppt.png',
-                              'powerpoint',
+                              l10n.categoryPowerPoint,
                               7,
                               context,
                             ),
-                            katagoriiconu('assets/zip.png', 'zip', 8, context),
-                            katagoriiconu('assets/pdf.png', 'pdf', 9, context),
-                            katagoriiconu('assets/txt.png', 'txt', 10, context),
+                            katagoriiconu(
+                              'assets/zip.png',
+                              l10n.categoryArchives,
+                              8,
+                              context,
+                            ),
+                            katagoriiconu(
+                              'assets/pdf.png',
+                              l10n.categoryPdf,
+                              9,
+                              context,
+                            ),
+                            katagoriiconu(
+                              'assets/txt.png',
+                              l10n.categoryText,
+                              10,
+                              context,
+                            ),
                           ],
                         ),
                       ),
@@ -107,7 +135,7 @@ class Anasayfaicerigi extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          'En Son Gezilenler',
+                          l10n.recentlyVisited,
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ),
@@ -146,6 +174,7 @@ class Anasayfaicerigi extends StatelessWidget {
                         );
                       }
                     }
+
                     if (context
                         .watch<Izinler>()
                         .fileTree
@@ -185,6 +214,7 @@ class Anasayfaicerigi extends StatelessWidget {
                         );
                       }
                     }
+
                     if (context
                             .watch<Izinler>()
                             .fileTree
@@ -205,16 +235,17 @@ class Anasayfaicerigi extends StatelessWidget {
                               height: 50,
                               color: Theme.of(context).primaryColor,
                             ),
-                            Text("Acilan Klasor Yok."),
+                            Text(l10n.noOpenedFolder),
                           ],
                         ),
                       );
                     }
+
                     return Column(
                       children: [
                         SizedBox(height: 10),
                         Center(
-                          child: Text('----------  Liste Sonu  ----------'),
+                          child: Text(l10n.listEnd),
                         ),
                       ],
                     );
