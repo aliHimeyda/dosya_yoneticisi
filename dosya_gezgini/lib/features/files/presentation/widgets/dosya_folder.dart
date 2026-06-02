@@ -1,32 +1,36 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:archive/archive_io.dart';
 import 'package:dosya_gezgini/app/router/app_router.dart';
+import 'package:dosya_gezgini/features/files/presentation/models/folder_route_data.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/dosyaislemleri.dart';
 import 'package:dosya_gezgini/features/files/state/folderleragaci.dart';
 import 'package:dosya_gezgini/features/files/state/izinler.dart';
+import 'package:dosya_gezgini/shared/widgets/app_skeleton.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:go_router/go_router.dart';
-import 'package:path/path.dart' as pathinfo;
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path/path.dart' as pathinfo;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
-import 'package:open_filex/open_filex.dart';
-import 'package:archive/archive_io.dart';
 
 class Klasor extends StatefulWidget {
-  final FolderNode klasor;
-  final String name;
-  final String path;
-
-  Klasor({
+  const Klasor({
     super.key,
     required this.name,
     required this.path,
     required this.klasor,
   });
+
+  final FolderNode klasor;
+  final String name;
+  final String path;
+
   @override
   State<Klasor> createState() => _KlasorState();
 }
@@ -35,156 +39,141 @@ class _KlasorState extends State<Klasor> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
-  late bool secilmismi = false;
-  // final FileStat olusturulmatarihi;
+  void _openFolder(BuildContext context) {
+    final routeData = FolderRouteData.fromFolderNode(widget.klasor);
+    final currentLocation = GoRouterState.of(context).uri.toString();
+    final destination = Paths.folderContentLocationFor(
+      currentLocation,
+      routeData.path,
+    );
+
+    if (currentLocation == destination) {
+      return;
+    }
+
+    unawaited(context.read<Izinler>().addRecentFolderEntry(widget.klasor));
+    context.push(destination, extra: routeData);
+  }
+
+  void _toggleSelection(BuildContext context) {
+    context.read<Dosyaislemleri>().toggleFolderSelection(widget.klasor);
+  }
+
+  void _handleTap(BuildContext context, bool isSelectionMode) {
+    if (isSelectionMode) {
+      _toggleSelection(context);
+      return;
+    }
+
+    _openFolder(context);
+  }
+
+  void _handleLongPress(BuildContext context) {
+    context.read<Altislemprovider>().setSelectionMode(true);
+    _toggleSelection(context);
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (!context.watch<Altislemprovider>().anahtar) {
-      setState(() {
-        secilmismi = false;
-      });
-    }
     super.build(context);
-    return Center(
-      child: Animate(
-        effects: [FadeEffect(duration: Duration(milliseconds: 100))],
-        child: GestureDetector(
-          onLongPress: () {
-            Provider.of<Altislemprovider>(
-              context,
-              listen: false,
-            ).changeanahtar();
-            secilmismi = !secilmismi;
-            if (secilmismi) {
-              if (!context.read<Dosyaislemleri>().folderlistesi.contains(
-                widget.klasor,
-              )) {
-                context.read<Dosyaislemleri>().folderlistesi.add(widget.klasor);
-              }
-            }
-          },
-          onTap: () async {
-            final izinler = Provider.of<Izinler>(context, listen: false);
-            izinler.fileTree.ensongezilenfolders.add(widget.klasor);
-            await izinler.setCurrentFolder(widget.klasor);
-            debugPrint('acilan klasor : ${izinler.getCurrentFolder!.name}');
 
-            context.push(Paths.klasoricerigisayfasi);
-          },
-          child: Container(
-            width: MediaQuery.of(context).size.width - 20,
-            height: MediaQuery.of(context).size.height / 10,
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  width: 0.3,
-                  color: Theme.of(context).iconTheme.color!,
-                ),
-                top: BorderSide(
-                  width: 1,
-                  color: Theme.of(context).iconTheme.color!,
-                ),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Row(
-                children: [
-                  context.watch<Altislemprovider>().anahtar
-                      ? GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            secilmismi = !secilmismi;
-                          });
-                          if (secilmismi) {
-                            if (!context
-                                .read<Dosyaislemleri>()
-                                .folderlistesi
-                                .contains(widget.klasor)) {
-                              context.read<Dosyaislemleri>().folderlistesi.add(
-                                widget.klasor,
-                              );
-                            }
-                          } else if (context
-                              .read<Dosyaislemleri>()
-                              .folderlistesi
-                              .contains(widget.klasor)) {
-                            context.read<Dosyaislemleri>().folderlistesi.remove(
-                              widget.klasor,
-                            );
-                          }
-                          debugPrint('tiklandi');
-                        },
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 25,
-                              height: 25,
-                              decoration: BoxDecoration(
-                                color:
-                                    secilmismi
-                                        ? Theme.of(context).primaryColor
-                                        : Colors.transparent,
-                                border: Border.all(
-                                  width: 3,
-                                  color: Theme.of(context).iconTheme.color!,
-                                ),
-
-                                borderRadius: BorderRadius.circular(30),
-                              ),
+    return Selector<Altislemprovider, bool>(
+      selector: (_, altIslemProvider) => altIslemProvider.anahtar,
+      builder: (context, isSelectionMode, _) {
+        return Selector<Dosyaislemleri, bool>(
+          selector:
+              (_, dosyaIslemleri) =>
+                  dosyaIslemleri.isFolderSelected(widget.klasor),
+          builder: (context, isSelected, _) {
+            return Center(
+              child: Animate(
+                effects: const [
+                  FadeEffect(duration: Duration(milliseconds: 100)),
+                ],
+                child: GestureDetector(
+                  onLongPress: () => _handleLongPress(context),
+                  onTap: () => _handleTap(context, isSelectionMode),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width - 20,
+                    height: MediaQuery.of(context).size.height / 10,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          width: 0.3,
+                          color: Theme.of(context).iconTheme.color!,
+                        ),
+                        top: BorderSide(
+                          width: 1,
+                          color: Theme.of(context).iconTheme.color!,
+                        ),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Row(
+                        children: [
+                          if (isSelectionMode)
+                            _SelectionIndicator(
+                              isSelected: isSelected,
+                              activeColor: Theme.of(context).primaryColor,
+                              borderColor: Theme.of(context).iconTheme.color!,
+                              onTap: () => _toggleSelection(context),
                             ),
-                            SizedBox(width: 10),
-                          ],
-                        ),
-                      )
-                      : SizedBox(),
-
-                  Image.asset('assets/folder.png', width: 40, height: 40),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          pathinfo.basename(widget.path).length > 20
-                              ? "${pathinfo.basename(widget.path).substring(0, 20)}..."
-                              : pathinfo.basename(widget.path),
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                        widget.klasor.olusumtarihi == null
-                            ? Row(
+                          Image.asset(
+                            'assets/folder.png',
+                            width: 40,
+                            height: 40,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '${(widget.klasor.filechildren.length + widget.klasor.folderchildren.length)} | ',
+                                  pathinfo.basename(widget.path).length > 20
+                                      ? '${pathinfo.basename(widget.path).substring(0, 20)}...'
+                                      : pathinfo.basename(widget.path),
+                                  style: Theme.of(context).textTheme.bodyLarge,
                                 ),
-                                SizedBox(
-                                  width: 15,
-                                  height: 15,
-                                  child: CircularProgressIndicator(),
-                                ),
+                                widget.klasor.olusumtarihi == null
+                                    ? Row(
+                                      children: [
+                                        Text('${widget.klasor.childCount} | '),
+                                        const AppSkeleton(
+                                          width: 72,
+                                          height: 12,
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(6),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                    : Text(
+                                      '${widget.klasor.childCount} | ${widget.klasor.formatlanmistarih}',
+                                    ),
                               ],
-                            )
-                            : Text(
-                              '${(widget.klasor.filechildren.length + widget.klasor.folderchildren.length)} | ${widget.klasor.formatlanmistarih}',
                             ),
-                      ],
+                          ),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
                     ),
                   ),
-                  Icon(Icons.chevron_right),
-                ],
+                ),
               ),
-            ),
-          ),
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 }
 
 class Dosya extends StatefulWidget {
-  final File file;
   const Dosya({super.key, required this.file});
+
+  final File file;
 
   @override
   State<Dosya> createState() => _DosyaState();
@@ -217,6 +206,7 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
 
   @override
   void initState() {
+    super.initState();
     bilgileriaktar();
     if (_isVideoFile) {
       _videoThumbnailFuture = _videoThumbnailCache.putIfAbsent(
@@ -229,7 +219,6 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
         ),
       );
     }
-    super.initState();
   }
 
   void bilgileriaktar() async {
@@ -237,7 +226,7 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
   }
 
   Future<List<String>> dosyabilgileri(String dosyayolu) async {
-    FileStat stat = await FileStat.stat(dosyayolu);
+    final stat = await FileStat.stat(dosyayolu);
     return [
       (stat.size / (1024 * 1024 * 1024)).toString(),
       stat.modified.toString(),
@@ -247,149 +236,115 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
-  late bool secilmismi = false;
   String get _dosyaUzantisi =>
       pathinfo.extension(widget.file.path).toLowerCase();
   bool get _isImageFile => _imageExtensions.contains(_dosyaUzantisi);
   bool get _isVideoFile => _videoExtensions.contains(_dosyaUzantisi);
 
+  void _toggleSelection(BuildContext context) {
+    context.read<Dosyaislemleri>().toggleFileSelection(widget.file);
+  }
+
+  void _handleLongPress(BuildContext context) {
+    context.read<Altislemprovider>().setSelectionMode(true);
+    _toggleSelection(context);
+  }
+
+  Future<void> _handleTap(BuildContext context, bool isSelectionMode) async {
+    if (isSelectionMode) {
+      _toggleSelection(context);
+      return;
+    }
+
+    unawaited(context.read<Izinler>().addRecentFileEntry(widget.file));
+
+    try {
+      if (_dosyaUzantisi == '.zip') {
+        await unzipFile(widget.file);
+      } else {
+        debugPrint('${widget.file.path} konumlu dosya aciliyor');
+        await OpenFilex.open(widget.file.path);
+      }
+    } catch (e) {
+      debugPrint('Dosya acilamadi: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (!context.watch<Altislemprovider>().anahtar) {
-      setState(() {
-        secilmismi = false;
-      });
-    }
     super.build(context);
     final dosyauzantisi = _dosyaUzantisi;
 
-    return Center(
-      child: Animate(
-        effects: [FadeEffect(duration: Duration(milliseconds: 100))],
-        child: GestureDetector(
-          onLongPress: () {
-            Provider.of<Altislemprovider>(
-              context,
-              listen: false,
-            ).changeanahtar();
-            secilmismi = !secilmismi;
-            if (secilmismi) {
-              if (!context.read<Dosyaislemleri>().filelistesi.contains(
-                widget.file,
-              )) {
-                context.read<Dosyaislemleri>().filelistesi.add(widget.file);
-              }
-            }
-          },
-          onTap: () async {
-            final izinler = Provider.of<Izinler>(context, listen: false);
-            izinler.fileTree.ensongezilenfiles.add(widget.file);
-            izinler.fileTree.ekraniguncelle();
-            try {
-              if (dosyauzantisi == '.zip') {
-                await unzipFile(widget.file);
-              } else {
-                debugPrint('${widget.file.path} konumlu dosya aciliyor');
-                await OpenFilex.open(widget.file.path);
-              }
-            } catch (e) {
-              debugPrint('Dosya açılamadı : $e');
-            }
-          },
-          child: Container(
-            width: MediaQuery.of(context).size.width - 20,
-            height: MediaQuery.of(context).size.height / 10,
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  width: 0.3,
-                  color: Theme.of(context).iconTheme.color!,
-                ),
-                top: BorderSide(
-                  width: 1,
-                  color: Theme.of(context).iconTheme.color!,
-                ),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Row(
-                children: [
-                  context.watch<Altislemprovider>().anahtar
-                      ? GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            secilmismi = !secilmismi;
-                          });
-                          if (secilmismi) {
-                            if (!context
-                                .read<Dosyaislemleri>()
-                                .filelistesi
-                                .contains(widget.file)) {
-                              context.read<Dosyaislemleri>().filelistesi.add(
-                                widget.file,
-                              );
-                            }
-                          } else if (context
-                              .read<Dosyaislemleri>()
-                              .filelistesi
-                              .contains(widget.file)) {
-                            context.read<Dosyaislemleri>().filelistesi.remove(
-                              widget.file,
-                            );
-                          }
-                          debugPrint(
-                            'tiklandi  boyut : ${context.read<Dosyaislemleri>().filelistesi.length}',
-                          );
-                        },
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 25,
-                              height: 25,
-                              decoration: BoxDecoration(
-                                color:
-                                    secilmismi
-                                        ? Theme.of(context).primaryColor
-                                        : Colors.transparent,
-                                border: Border.all(
-                                  width: 3,
-                                  color: Theme.of(context).iconTheme.color!,
-                                ),
-
-                                borderRadius: BorderRadius.circular(30),
-                              ),
+    return Selector<Altislemprovider, bool>(
+      selector: (_, altIslemProvider) => altIslemProvider.anahtar,
+      builder: (context, isSelectionMode, _) {
+        return Selector<Dosyaislemleri, bool>(
+          selector:
+              (_, dosyaIslemleri) => dosyaIslemleri.isFileSelected(widget.file),
+          builder: (context, isSelected, _) {
+            return Center(
+              child: Animate(
+                effects: const [
+                  FadeEffect(duration: Duration(milliseconds: 100)),
+                ],
+                child: GestureDetector(
+                  onLongPress: () => _handleLongPress(context),
+                  onTap: () => _handleTap(context, isSelectionMode),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width - 20,
+                    height: MediaQuery.of(context).size.height / 10,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          width: 0.3,
+                          color: Theme.of(context).iconTheme.color!,
+                        ),
+                        top: BorderSide(
+                          width: 1,
+                          color: Theme.of(context).iconTheme.color!,
+                        ),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Row(
+                        children: [
+                          if (isSelectionMode)
+                            _SelectionIndicator(
+                              isSelected: isSelected,
+                              activeColor: Theme.of(context).primaryColor,
+                              borderColor: Theme.of(context).iconTheme.color!,
+                              onTap: () => _toggleSelection(context),
                             ),
-                            SizedBox(width: 10),
-                          ],
-                        ),
-                      )
-                      : SizedBox(),
-                  _buildDosyaOnizleme(dosyauzantisi),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          pathinfo.basename(widget.file.path).length > 20
-                              ? "${pathinfo.basename(widget.file.path).substring(0, 20)}..."
-                              : pathinfo.basename(widget.file.path),
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                        Text(' GB | '),
-                        // ${dosyabilgisi[1]}
-                        // ${dosyabilgisi[0] ?? 0}
-                      ],
+                          _buildDosyaOnizleme(dosyauzantisi),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  pathinfo.basename(widget.file.path).length >
+                                          20
+                                      ? '${pathinfo.basename(widget.file.path).substring(0, 20)}...'
+                                      : pathinfo.basename(widget.file.path),
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                                const Text(' GB | '),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
                     ),
                   ),
-                  Icon(Icons.chevron_right),
-                ],
+                ),
               ),
-            ),
-          ),
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -510,15 +465,13 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
 
   Future<void> unzipFile(File zipFile) async {
     final directory = await getExternalStorageDirectory();
-    final targetPath = pathinfo.join(directory!.path, "unzip");
+    final targetPath = pathinfo.join(directory!.path, 'unzip');
 
-    // Eğer klasör yoksa oluştur
     final targetDir = Directory(targetPath);
     if (!await targetDir.exists()) {
       await targetDir.create(recursive: true);
     }
 
-    // ZIP dosyasını oku
     final bytes = await zipFile.readAsBytes();
     final archive = ZipDecoder().decodeBytes(bytes);
 
@@ -533,6 +486,41 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
       }
     }
 
-    print("ZIP başarıyla açıldı: $targetPath");
+    debugPrint('ZIP basariyla acildi: $targetPath');
+  }
+}
+
+class _SelectionIndicator extends StatelessWidget {
+  const _SelectionIndicator({
+    required this.isSelected,
+    required this.activeColor,
+    required this.borderColor,
+    required this.onTap,
+  });
+
+  final bool isSelected;
+  final Color activeColor;
+  final Color borderColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            width: 25,
+            height: 25,
+            decoration: BoxDecoration(
+              color: isSelected ? activeColor : Colors.transparent,
+              border: Border.all(width: 3, color: borderColor),
+              borderRadius: BorderRadius.circular(30),
+            ),
+          ),
+          const SizedBox(width: 10),
+        ],
+      ),
+    );
   }
 }

@@ -24,6 +24,15 @@
   "categoryText": "text",
   "folderEmpty": "There are no files or folders in this directory.",
   "searchHint": "Search",
+  "searchMinCharacters": "Type at least {count} characters to search.",
+  "@searchMinCharacters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noSearchResults": "No search results found.",
   "createFolder": "Create Folder",
   "hiddenFiles": "Hidden Files",
   "paste": "Paste",
@@ -60,6 +69,14 @@
     }
   },
   "clean": "Clean",
+  "categoryIndexPreparing": "Preparing {category} files...",
+  "@categoryIndexPreparing": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
   "navigationMenu": "Menu",
   "navigationRecent": "Recent",
   "navigationFolders": "Folders",

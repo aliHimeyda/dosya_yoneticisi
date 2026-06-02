@@ -40,11 +40,7 @@ class _TemizliksayfasiState extends State<Temizliksayfasi> {
                 constraints: BoxConstraints(minWidth: 150, minHeight: 150),
               )
               : dosyaIslemleri.aramaloading
-              ? Image.asset(
-                'assets/risk.png',
-                height: 150,
-                width: 150,
-              )
+              ? Image.asset('assets/risk.png', height: 150, width: 150)
               : Animate(
                 effects: [
                   FadeEffect(
@@ -58,11 +54,7 @@ class _TemizliksayfasiState extends State<Temizliksayfasi> {
                     curve: Curves.easeInOut,
                   ),
                 ],
-                child: Image.asset(
-                  'assets/true.png',
-                  height: 150,
-                  width: 150,
-                ),
+                child: Image.asset('assets/true.png', height: 150, width: 150),
               ),
           SizedBox(height: 50),
           dosyaIslemleri.loading

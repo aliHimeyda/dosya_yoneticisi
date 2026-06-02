@@ -24,6 +24,15 @@
   "categoryText": "metin",
   "folderEmpty": "Bu klasörde hiç dosya veya dizin yok.",
   "searchHint": "Arama yap",
+  "searchMinCharacters": "Arama için en az {count} karakter yazın.",
+  "@searchMinCharacters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noSearchResults": "Arama sonucu bulunamadı.",
   "createFolder": "Klasör Oluştur",
   "hiddenFiles": "Gizli Dosyalar",
   "paste": "Yapıştır",
@@ -60,6 +69,14 @@
     }
   },
   "clean": "Temizle",
+  "categoryIndexPreparing": "{category} dosyaları hazırlanıyor...",
+  "@categoryIndexPreparing": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
   "navigationMenu": "Menü",
   "navigationRecent": "Son",
   "navigationFolders": "Klasörler",

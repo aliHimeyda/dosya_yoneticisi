@@ -1,15 +1,17 @@
+import 'package:battery_plus/battery_plus.dart';
 import 'package:dosya_gezgini/app/router/app_router.dart';
 import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
 import 'package:dosya_gezgini/core/localization/locale_provider.dart';
 import 'package:dosya_gezgini/core/theme/app_theme.dart';
 import 'package:dosya_gezgini/features/menu/state/localestoragebilgileri.dart';
+import 'package:dosya_gezgini/shared/widgets/app_skeleton.dart';
+import 'package:dosya_gezgini/shared/widgets/storage_card_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:battery_plus/battery_plus.dart';
-import 'package:intl/intl.dart'; // Tarih formatlama için
 
 class Pil {
   static final Battery pil = Battery();
@@ -31,25 +33,24 @@ class _MenuState extends State<Menu> {
     super.dispose();
   }
 
-  // Saat akışını (stream) oluştur
   Stream<String> zamanigetir() async* {
     while (true) {
-      await Future.delayed(Duration(seconds: 1)); // Her saniye güncelle
-      yield DateFormat('HH:mm:ss').format(DateTime.now()); // 24 saat formatında
+      await Future.delayed(const Duration(seconds: 1));
+      yield DateFormat('HH:mm:ss').format(DateTime.now());
     }
   }
 
   Stream<String> depolamaalanigetir() async* {
     while (true) {
-      await Future.delayed(Duration(seconds: 1)); // Her saniye güncelle
+      await Future.delayed(const Duration(seconds: 1));
       yield Battery().batteryLevel.toString();
     }
   }
 
   Stream<int> pildurumugetir() async* {
     while (true) {
-      await Future.delayed(Duration(seconds: 1)); // Her saniye güncelle
-      int pildurumu = await Pil.pil.batteryLevel;
+      await Future.delayed(const Duration(seconds: 1));
+      final pildurumu = await Pil.pil.batteryLevel;
       yield pildurumu;
     }
   }
@@ -57,7 +58,7 @@ class _MenuState extends State<Menu> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-
+    final appTheme = Theme.of(context);
     return Center(
       child: Column(
         children: [
@@ -65,30 +66,27 @@ class _MenuState extends State<Menu> {
             height: 50,
             decoration: BoxDecoration(
               border: Border(
-                bottom: BorderSide(
-                  width: 2,
-                  color: Theme.of(context).primaryColor,
-                ),
+                bottom: BorderSide(width: 2, color: appTheme.primaryColor),
               ),
             ),
             child: Row(
               children: [
-                saatbox(context),
-                Depolamadurumubox(context),
-                Pildurumubox(context),
+                saatbox(context, appTheme),
+                depolamaDurumuBox(context, appTheme),
+                pilDurumuBox(context, appTheme),
               ],
             ),
           ),
           Wrap(
             children: [
-              kareislemsecenegi(context, l10n.actionLabel, Icons.abc),
-              kareislemsecenegi(context, l10n.actionLabel, Icons.abc),
-              kareislemsecenegi(context, l10n.actionLabel, Icons.abc),
-              kareislemsecenegi(context, l10n.actionLabel, Icons.abc),
+              kareislemsecenegi(context, l10n.actionLabel, Icons.abc, appTheme),
+              kareislemsecenegi(context, l10n.actionLabel, Icons.abc, appTheme),
+              kareislemsecenegi(context, l10n.actionLabel, Icons.abc, appTheme),
+              kareislemsecenegi(context, l10n.actionLabel, Icons.abc, appTheme),
             ],
           ),
           Animate(
-            effects: [FadeEffect(duration: Duration(milliseconds: 100))],
+            effects: [FadeEffect(duration: const Duration(milliseconds: 100))],
             child: Container(
               width: MediaQuery.of(context).size.width - 20,
               height: MediaQuery.of(context).size.height / 10,
@@ -111,7 +109,7 @@ class _MenuState extends State<Menu> {
                         children: [
                           Text(
                             l10n.themeMode,
-                            style: Theme.of(context).textTheme.bodyLarge,
+                            style: appTheme.textTheme.bodyLarge,
                           ),
                         ],
                       ),
@@ -119,37 +117,35 @@ class _MenuState extends State<Menu> {
                     Switch(
                       value: context.watch<AppTheme>().isdarkmode,
                       onChanged: (value) {
-                        Provider.of<AppTheme>(
-                          context,
-                          listen: false,
-                        ).changetheme();
+                        context.read<AppTheme>().changetheme();
                       },
-                      // value: widget.isDarkMode,
-                      // onChanged: widget.onChanged, // Tema değiştirme fonksiyonunu çağırır
-                      activeColor:
-                          Theme.of(context).primaryColor, // Açık mod rengi
-                      inactiveThumbColor:
-                          Theme.of(context).primaryColor, // Karanlık mod rengi
+                      activeThumbColor: appTheme.primaryColor,
+                      inactiveThumbColor: appTheme.primaryColor,
                     ),
                   ],
                 ),
               ),
             ),
           ),
-          dilSecimCubugu(context),
-          islemsecenegi(context, Icons.delete_sweep, l10n.deepCleanup, 1),
-          islemsecenegi(context, Icons.lock, l10n.privateFiles, 2),
-          islemsecenegi(context, Icons.favorite, l10n.savedFiles, 3),
+          dilSecimCubugu(context, appTheme),
+          islemsecenegi(
+            context,
+            Icons.delete_sweep,
+            l10n.deepCleanup,
+            1,
+            appTheme,
+          ),
+          islemsecenegi(context, Icons.lock, l10n.privateFiles, 2, appTheme),
+          islemsecenegi(context, Icons.favorite, l10n.savedFiles, 3, appTheme),
         ],
       ),
     );
   }
 
-  Widget dilSecimCubugu(BuildContext context) {
+  Widget dilSecimCubugu(BuildContext context, appTheme) {
     final localeProvider = context.watch<LocaleProvider>();
-
     return Animate(
-      effects: [FadeEffect(duration: Duration(milliseconds: 100))],
+      effects: [FadeEffect(duration: const Duration(milliseconds: 100))],
       child: Container(
         width: MediaQuery.of(context).size.width - 20,
         height: MediaQuery.of(context).size.height / 10,
@@ -163,7 +159,7 @@ class _MenuState extends State<Menu> {
           padding: const EdgeInsets.all(10),
           child: Row(
             children: [
-              Icon(Icons.translate, size: 30),
+              const Icon(Icons.translate, size: 30),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -172,7 +168,7 @@ class _MenuState extends State<Menu> {
                   children: [
                     Text(
                       context.l10n.languageLabel,
-                      style: Theme.of(context).textTheme.bodyLarge,
+                      style: appTheme.textTheme.bodyLarge,
                     ),
                   ],
                 ),
@@ -198,13 +194,13 @@ class _MenuState extends State<Menu> {
     );
   }
 
-  Container saatbox(BuildContext context) {
+  Container saatbox(BuildContext context, appTheme) {
     return Container(
       width: MediaQuery.of(context).size.width / 4,
       height: 50,
       decoration: BoxDecoration(
         border: Border(
-          right: BorderSide(width: 2, color: Theme.of(context).primaryColor),
+          right: BorderSide(width: 2, color: appTheme.primaryColor),
         ),
       ),
       child: Center(
@@ -212,19 +208,16 @@ class _MenuState extends State<Menu> {
           stream: zamanigetir(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).primaryColor,
-                  ),
-                ),
-              ); // İlk değer gelene kadar yükleme göstergesi
+              return const AppSkeleton(
+                width: 48,
+                height: 18,
+                borderRadius: BorderRadius.all(Radius.circular(6)),
+              );
             }
+
             return Text(
-              snapshot.data!, // Güncellenen saat
-              style: TextStyle(fontWeight: FontWeight.bold),
+              snapshot.data!,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             );
           },
         ),
@@ -232,66 +225,49 @@ class _MenuState extends State<Menu> {
     );
   }
 
-  Container Depolamadurumubox(BuildContext context) {
+  Container depolamaDurumuBox(BuildContext context, appTheme) {
+    final storage = context.watch<Localestoragebilgileri>();
     return Container(
       width: MediaQuery.of(context).size.width / 2,
       height: 50,
       decoration: BoxDecoration(
         border: Border(
-          right: BorderSide(width: 2, color: Theme.of(context).primaryColor),
+          right: BorderSide(width: 2, color: appTheme.primaryColor),
         ),
       ),
       child:
-          context.watch<Localestoragebilgileri>().usedspace != 0
+          storage.usedspace != 0
               ? Stack(
                 children: [
                   LinearProgressIndicator(
-                    value:
-                        context.watch<Localestoragebilgileri>().usedspace /
-                        context.watch<Localestoragebilgileri>().totalspace,
-                    backgroundColor:
-                        Theme.of(
-                          context,
-                        ).scaffoldBackgroundColor, // Boş kısmın rengi
-                    color:
-                        Theme.of(
-                          context,
-                        ).secondaryHeaderColor, // Dolan kısmın rengi
-                    minHeight: 50, // Çubuğun kalınlığı
+                    value: storage.usedspace / storage.totalspace,
+                    backgroundColor: appTheme.scaffoldBackgroundColor,
+                    color: appTheme.secondaryHeaderColor,
+                    minHeight: 50,
                   ).animate().custom(
-                    duration: 1.seconds, // Animasyon süresi
-                    begin: 0.0, // Başlangıç değeri
-                    end:
-                        context.watch<Localestoragebilgileri>().usedspace /
-                        context
-                            .watch<Localestoragebilgileri>()
-                            .totalspace, // Hedef değer
+                    duration: 1.seconds,
+                    begin: 0.0,
+                    end: storage.usedspace / storage.totalspace,
                     builder:
                         (context, value, child) => LinearProgressIndicator(
-                          value: value, // Animasyonlu değer
-                          backgroundColor:
-                              Theme.of(context).scaffoldBackgroundColor,
-                          color: Theme.of(context).secondaryHeaderColor,
+                          value: value,
+                          backgroundColor: appTheme.scaffoldBackgroundColor,
+                          color: appTheme.secondaryHeaderColor,
                           minHeight: 50,
                         ),
                   ),
                   Center(
                     child: Text(
-                      '${context.watch<Localestoragebilgileri>().usedspace.toStringAsFixed(2)} | ${context.watch<Localestoragebilgileri>().totalspace.toStringAsFixed(2)} GB',
+                      '${storage.usedspace.toStringAsFixed(2)} | ${storage.totalspace.toStringAsFixed(2)} GB',
                     ),
                   ),
                 ],
               )
-              : CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).primaryColor,
-                ),
-                constraints: BoxConstraints(minWidth: 10, minHeight: 10),
-              ),
+              : const StorageCardSkeleton(height: 50),
     );
   }
 
-  SizedBox Pildurumubox(BuildContext context) {
+  SizedBox pilDurumuBox(BuildContext context, appTheme) {
     return SizedBox(
       width: MediaQuery.of(context).size.width / 4,
       height: 50,
@@ -300,41 +276,29 @@ class _MenuState extends State<Menu> {
           stream: pildurumugetir(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).primaryColor,
-                  ),
-                ),
-              ); // İlk değer gelene kadar yükleme göstergesi
+              return const AppSkeleton(
+                width: 52,
+                height: 18,
+                borderRadius: BorderRadius.all(Radius.circular(6)),
+              );
             }
+
             return Stack(
               children: [
                 LinearProgressIndicator(
-                  value:
-                      snapshot.data! /
-                      100, // Pil seviyesini 0.0 - 1.0 aralığına getir
-                  backgroundColor:
-                      Theme.of(
-                        context,
-                      ).scaffoldBackgroundColor, // Boş kısmın rengi
-                  color:
-                      Theme.of(
-                        context,
-                      ).secondaryHeaderColor, // Dolan kısmın rengi
-                  minHeight: 50, // Çubuğun kalınlığı
+                  value: snapshot.data! / 100,
+                  backgroundColor: appTheme.scaffoldBackgroundColor,
+                  color: appTheme.secondaryHeaderColor,
+                  minHeight: 50,
                 ).animate().custom(
-                  duration: 1.seconds, // Animasyon süresi
-                  begin: 0.0, // Başlangıç değeri
-                  end: snapshot.data! / 100, // Hedef değer
+                  duration: 1.seconds,
+                  begin: 0.0,
+                  end: snapshot.data! / 100,
                   builder:
                       (context, value, child) => LinearProgressIndicator(
-                        value: value, // Animasyonlu değer
-                        backgroundColor:
-                            Theme.of(context).scaffoldBackgroundColor,
-                        color: Theme.of(context).secondaryHeaderColor,
+                        value: value,
+                        backgroundColor: appTheme.scaffoldBackgroundColor,
+                        color: appTheme.secondaryHeaderColor,
                         minHeight: 50,
                       ),
                 ),
@@ -342,10 +306,10 @@ class _MenuState extends State<Menu> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.earbuds_battery),
+                      const Icon(Icons.earbuds_battery),
                       Text(
-                        snapshot.data!.toString(), // Güncellenen pildurumu
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        snapshot.data!.toString(),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -362,26 +326,22 @@ class _MenuState extends State<Menu> {
     BuildContext context,
     String islem,
     IconData icon,
+    appTheme,
   ) {
     return GestureDetector(
-      onTap: () {
-        // context.push(Paths.ensongezilenler); // Sayfaya nesneyi geçir)
-      },
+      onTap: () {},
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(8),
         child: Container(
           width: MediaQuery.of(context).size.width / 2 - 60,
           height: 60,
           decoration: BoxDecoration(
-            border: Border.all(
-              width: 0.8,
-              color: Theme.of(context).iconTheme.color!,
-            ),
+            border: Border.all(width: 0.8, color: appTheme.iconTheme.color!),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(8),
               child: Row(
                 spacing: 4,
                 children: [
@@ -389,10 +349,10 @@ class _MenuState extends State<Menu> {
                   Expanded(
                     child: Text(
                       islem,
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
-                  Icon(Icons.chevron_right),
+                  const Icon(Icons.chevron_right),
                 ],
               ),
             ),
@@ -407,33 +367,27 @@ class _MenuState extends State<Menu> {
     IconData icon,
     String hizmet,
     int index,
+    appTheme,
   ) {
     return GestureDetector(
       onTap: () {
         if (index == 1) {
           context.push(Paths.temizliksayfasi);
         } else if (index == 2) {
-          String sifre = '';
-          gizlidosyalarsifresisorgulama(context, sifre);
+          gizlidosyalarsifresisorgulama(context, '', appTheme);
         } else if (index == 3) {
           context.push(Paths.kaydedilendosyalar);
         }
       },
       child: Animate(
-        effects: [FadeEffect(duration: Duration(milliseconds: 100))],
+        effects: [FadeEffect(duration: const Duration(milliseconds: 100))],
         child: Container(
           width: MediaQuery.of(context).size.width - 20,
           height: MediaQuery.of(context).size.height / 10,
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(
-                width: 0.3,
-                color: Theme.of(context).iconTheme.color!,
-              ),
-              top: BorderSide(
-                width: 1,
-                color: Theme.of(context).iconTheme.color!,
-              ),
+              bottom: BorderSide(width: 0.3, color: appTheme.iconTheme.color!),
+              top: BorderSide(width: 1, color: appTheme.iconTheme.color!),
             ),
           ),
           child: Padding(
@@ -447,14 +401,11 @@ class _MenuState extends State<Menu> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        hizmet,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
+                      Text(hizmet, style: appTheme.textTheme.bodyLarge),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right),
+                const Icon(Icons.chevron_right),
               ],
             ),
           ),
@@ -466,14 +417,13 @@ class _MenuState extends State<Menu> {
   Future<dynamic> gizlidosyalarsifresisorgulama(
     BuildContext context,
     String sifre,
+    appTheme,
   ) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ), // Köşeleri yuvarlat
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder:
           (context) => Container(
@@ -492,7 +442,7 @@ class _MenuState extends State<Menu> {
                 Center(
                   child: Animate(
                     effects: [
-                      FadeEffect(duration: Duration(milliseconds: 100)),
+                      FadeEffect(duration: const Duration(milliseconds: 100)),
                     ],
                     child: Container(
                       width: MediaQuery.of(context).size.width - 20,
@@ -501,11 +451,11 @@ class _MenuState extends State<Menu> {
                         border: Border(
                           bottom: BorderSide(
                             width: 0.3,
-                            color: Theme.of(context).iconTheme.color!,
+                            color: appTheme.iconTheme.color!,
                           ),
                           top: BorderSide(
                             width: 1,
-                            color: Theme.of(context).iconTheme.color!,
+                            color: appTheme.iconTheme.color!,
                           ),
                         ),
                       ),
@@ -515,7 +465,7 @@ class _MenuState extends State<Menu> {
                           children: [
                             Icon(
                               Icons.lock,
-                              color: Theme.of(context).primaryColor,
+                              color: appTheme.primaryColor,
                               size: 50,
                             ),
                             const SizedBox(width: 10),
@@ -524,8 +474,7 @@ class _MenuState extends State<Menu> {
                                 controller: _controller,
                                 decoration: InputDecoration(
                                   hintText: context.l10n.passwordHint,
-                                  hintStyle:
-                                      Theme.of(context).textTheme.bodyLarge,
+                                  hintStyle: appTheme.textTheme.bodyLarge,
                                 ),
                               ),
                             ),
@@ -535,7 +484,7 @@ class _MenuState extends State<Menu> {
                     ),
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -553,24 +502,18 @@ class _MenuState extends State<Menu> {
                             toastLength: Toast.LENGTH_SHORT,
                             gravity: ToastGravity.TOP,
                             timeInSecForIosWeb: 10,
-                            backgroundColor:
-                                Theme.of(context).secondaryHeaderColor,
-                            textColor:
-                                Theme.of(context).textTheme.labelLarge!.color,
-                            fontSize: 16.0,
+                            backgroundColor: appTheme.secondaryHeaderColor,
+                            textColor: appTheme.textTheme.labelLarge!.color,
+                            fontSize: 16,
                           );
                         }
-                      }, // Kapatma butonu
+                      },
                       child: Text(context.l10n.ok),
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        // Provider.of<Dosyaislemleri>(
-                        //   context,
-                        //   listen: false,
-                        // ).sil();
                         Navigator.pop(context);
-                      }, // Kapatma butonu
+                      },
                       child: Text(context.l10n.cancel),
                     ),
                   ],

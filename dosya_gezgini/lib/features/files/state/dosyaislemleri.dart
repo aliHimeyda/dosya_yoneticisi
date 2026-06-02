@@ -1,5 +1,10 @@
 import 'dart:io';
+
 import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
+import 'package:dosya_gezgini/data/models/hidden_item_model.dart';
+import 'package:dosya_gezgini/data/models/saved_item_model.dart';
+import 'package:dosya_gezgini/data/repositories/hidden_repository.dart';
+import 'package:dosya_gezgini/data/repositories/saved_repository.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/folderleragaci.dart';
 import 'package:dosya_gezgini/features/files/state/izinler.dart';
@@ -11,6 +16,15 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 class Dosyaislemleri extends ChangeNotifier {
+  Dosyaislemleri({
+    required SavedRepository savedRepository,
+    required HiddenRepository hiddenRepository,
+  }) : _savedRepository = savedRepository,
+       _hiddenRepository = hiddenRepository;
+
+  final SavedRepository _savedRepository;
+  final HiddenRepository _hiddenRepository;
+
   late List<FolderNode> folderlistesi = [];
   late List<File> filelistesi = [];
   late List<FolderNode> kopyalananfolder = [];
@@ -23,6 +37,45 @@ class Dosyaislemleri extends ChangeNotifier {
   late bool onbellekdosyalarialinmasi = false;
 
   late FolderNode? guncelparent;
+
+  bool get hasSelectedFiles => filelistesi.isNotEmpty;
+  bool get hasClipboardContent =>
+      kopyalananfolder.isNotEmpty || kopyalananfile.isNotEmpty;
+
+  bool isFolderSelected(FolderNode folder) {
+    return folderlistesi.any((item) => item.path == folder.path);
+  }
+
+  bool isFileSelected(File file) {
+    return filelistesi.any((item) => item.path == file.path);
+  }
+
+  void toggleFolderSelection(FolderNode folder) {
+    if (isFolderSelected(folder)) {
+      folderlistesi.removeWhere((item) => item.path == folder.path);
+    } else {
+      folderlistesi.add(folder);
+    }
+    notifyListeners();
+  }
+
+  void toggleFileSelection(File file) {
+    if (isFileSelected(file)) {
+      filelistesi.removeWhere((item) => item.path == file.path);
+    } else {
+      filelistesi.add(file);
+    }
+    notifyListeners();
+  }
+
+  void clearSelection({bool notify = true}) {
+    final hadSelection = folderlistesi.isNotEmpty || filelistesi.isNotEmpty;
+    folderlistesi.clear();
+    filelistesi.clear();
+    if (notify && hadSelection) {
+      notifyListeners();
+    }
+  }
 
   List<FolderNode>? getfolders() {
     if (folderlistesi.isNotEmpty) {
@@ -117,6 +170,10 @@ class Dosyaislemleri extends ChangeNotifier {
   }
 
   Future<void> sil(BuildContext context) async {
+    final deletedPaths = <String>{
+      ...folderlistesi.map((folder) => folder.path),
+      ...filelistesi.map((file) => file.path),
+    };
     if (folderlistesi.isNotEmpty) {
       for (FolderNode folder in folderlistesi) {
         try {
@@ -158,6 +215,9 @@ class Dosyaislemleri extends ChangeNotifier {
         }
       }
     }
+    await context.read<Izinler>().removePathsFromPersistentCollections(
+      deletedPaths,
+    );
     Fluttertoast.showToast(
       msg: context.l10n.deleteSuccess,
       toastLength: Toast.LENGTH_SHORT,
@@ -167,15 +227,14 @@ class Dosyaislemleri extends ChangeNotifier {
       textColor: Theme.of(context).textTheme.labelLarge!.color,
       fontSize: 16.0,
     );
-    folderlistesi.clear();
-    filelistesi.clear();
+    clearSelection(notify: false);
     Provider.of<Altislemprovider>(context, listen: false).changeanahtar();
     Provider.of<Izinler>(context, listen: false).fileTree.ekraniguncelle();
     notifyListeners();
   }
 
   Future<void> dosyalaripaylas() async {
-    List<XFile> paylasilacakdosyalar=[];
+    List<XFile> paylasilacakdosyalar = [];
     for (File file in filelistesi) {
       XFile paylasilacakdosya = XFile(file.path);
       paylasilacakdosyalar.add(paylasilacakdosya);
@@ -212,8 +271,7 @@ class Dosyaislemleri extends ChangeNotifier {
       textColor: Theme.of(context).textTheme.labelLarge!.color,
       fontSize: 16.0,
     );
-    folderlistesi.clear();
-    filelistesi.clear();
+    clearSelection(notify: false);
     Provider.of<Altislemprovider>(context, listen: false).changeanahtar();
     notifyListeners();
   }
@@ -298,7 +356,7 @@ class Dosyaislemleri extends ChangeNotifier {
           listen: false,
         ).getCurrentFolder!.filechildren.add(yeniDosya);
 
-        debugPrint("Dosya eklendi: ${yeniDosyaYolu}");
+        debugPrint('Dosya eklendi: $yeniDosyaYolu');
         Provider.of<Izinler>(context, listen: false).notifyListeners();
       } else {
         debugPrint(
@@ -328,7 +386,6 @@ class Dosyaislemleri extends ChangeNotifier {
     String newName,
     BuildContext context,
   ) async {
-    String uzanti = '';
     try {
       FileSystemEntity entity;
 
@@ -336,7 +393,6 @@ class Dosyaislemleri extends ChangeNotifier {
           FileSystemEntityType.directory) {
         entity = Directory(oldPath);
       } else {
-        uzanti = path.extension(oldPath);
         entity = File(oldPath);
       }
       String newPath = path.join(path.dirname(oldPath), newName);
@@ -383,24 +439,16 @@ class Dosyaislemleri extends ChangeNotifier {
 
   Future<void> kaydet(BuildContext context) async {
     try {
-      if (folderlistesi.isNotEmpty) {
-        for (FolderNode folder in folderlistesi) {
-          Provider.of<Izinler>(
-            context,
-            listen: false,
-          ).fileTree.kaydedilenfolder.add(folder);
-        }
-      }
-      if (filelistesi.isNotEmpty) {
-        for (File file in filelistesi) {
-          Provider.of<Izinler>(
-            context,
-            listen: false,
-          ).fileTree.kaydedilenfile.add(file);
-        }
-      }
+      final now = DateTime.now();
+      await _savedRepository.upsertAll([
+        for (final folder in folderlistesi)
+          SavedItemModel(path: folder.path, isDirectory: true, updatedAt: now),
+        for (final file in filelistesi)
+          SavedItemModel(path: file.path, isDirectory: false, updatedAt: now),
+      ]);
+      await context.read<Izinler>().syncSavedEntries();
       debugPrint(
-        'kaydedilen folder boyutu : ${Provider.of<Izinler>(context, listen: false).fileTree.kaydedilenfolder.length}, kaydedilen file boyutu: ${Provider.of<Izinler>(context, listen: false).fileTree.kaydedilenfile.length}',
+        'kaydedilen folder boyutu : ${context.read<Izinler>().fileTree.kaydedilenfolder.length}, kaydedilen file boyutu: ${context.read<Izinler>().fileTree.kaydedilenfile.length}',
       );
     } catch (e) {
       debugPrint("kaydetme hatası: $e");
@@ -414,40 +462,34 @@ class Dosyaislemleri extends ChangeNotifier {
       textColor: Theme.of(context).textTheme.labelLarge!.color,
       fontSize: 16.0,
     );
-    folderlistesi.clear();
-    filelistesi.clear();
+    clearSelection(notify: false);
     Provider.of<Altislemprovider>(context, listen: false).changeanahtar();
     notifyListeners();
   }
 
   Future<void> sakla(BuildContext context) async {
     try {
+      final now = DateTime.now();
+      await _hiddenRepository.upsertAll([
+        for (final folder in folderlistesi)
+          HiddenItemModel(path: folder.path, isDirectory: true, updatedAt: now),
+        for (final file in filelistesi)
+          HiddenItemModel(path: file.path, isDirectory: false, updatedAt: now),
+      ]);
       if (folderlistesi.isNotEmpty) {
         for (FolderNode folder in folderlistesi) {
-          Provider.of<Izinler>(
-            context,
-            listen: false,
-          ).fileTree.gizlenenfolder.add(folder);
-          Provider.of<Izinler>(
-            context,
-            listen: false,
-          ).getCurrentFolder!.folderchildren.remove(folder);
+          context.read<Izinler>().currentFolder!.folderchildren.remove(folder);
         }
       }
       if (filelistesi.isNotEmpty) {
         for (File file in filelistesi) {
-          Provider.of<Izinler>(
-            context,
-            listen: false,
-          ).fileTree.gizlenenfile.add(file);
-          Provider.of<Izinler>(
-            context,
-            listen: false,
-          ).getCurrentFolder!.filechildren.remove(file);
+          context.read<Izinler>().currentFolder!.filechildren.remove(file);
         }
       }
+      context.read<Izinler>().fileTree.ekraniguncelle();
+      await context.read<Izinler>().syncHiddenEntries();
       debugPrint(
-        'Gizlenen folder boyutu : ${Provider.of<Izinler>(context, listen: false).fileTree.gizlenenfolder.length}, Gizlenen file boyutu: ${Provider.of<Izinler>(context, listen: false).fileTree.gizlenenfile.length}',
+        'Gizlenen folder boyutu : ${context.read<Izinler>().fileTree.gizlenenfolder.length}, Gizlenen file boyutu: ${context.read<Izinler>().fileTree.gizlenenfile.length}',
       );
     } catch (e) {
       debugPrint("Gizleme hatası: $e");
@@ -463,8 +505,7 @@ class Dosyaislemleri extends ChangeNotifier {
       fontSize: 16.0,
     );
 
-    folderlistesi.clear();
-    filelistesi.clear();
+    clearSelection(notify: false);
     Provider.of<Altislemprovider>(context, listen: false).changeanahtar();
     notifyListeners();
   }
@@ -489,6 +530,10 @@ class Dosyaislemleri extends ChangeNotifier {
   Future<void> kes(BuildContext context) async {
     //kopyalama islemi .....................
 
+    final movedPaths = <String>{
+      ...folderlistesi.map((folder) => folder.path),
+      ...filelistesi.map((file) => file.path),
+    };
     kopyalananfolder.clear();
     kopyalananfile.clear();
     try {
@@ -549,8 +594,10 @@ class Dosyaislemleri extends ChangeNotifier {
       debugPrint("kesme hatası: $e");
     }
 
-    folderlistesi.clear();
-    filelistesi.clear();
+    await context.read<Izinler>().removePathsFromPersistentCollections(
+      movedPaths,
+    );
+    clearSelection(notify: false);
     Provider.of<Altislemprovider>(context, listen: false).changeanahtar();
     Provider.of<Izinler>(context, listen: false).notifyListeners();
     notifyListeners();

@@ -24,6 +24,15 @@
   "categoryText": "نص",
   "folderEmpty": "لا توجد ملفات أو مجلدات في هذا الدليل.",
   "searchHint": "بحث",
+  "searchMinCharacters": "اكتب {count} أحرف على الأقل للبحث.",
+  "@searchMinCharacters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noSearchResults": "لم يتم العثور على نتائج للبحث.",
   "createFolder": "إنشاء مجلد",
   "hiddenFiles": "الملفات المخفية",
   "paste": "لصق",
@@ -60,6 +69,14 @@
     }
   },
   "clean": "تنظيف",
+  "categoryIndexPreparing": "جارٍ إعداد ملفات {category}...",
+  "@categoryIndexPreparing": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
   "navigationMenu": "القائمة",
   "navigationRecent": "الأخيرة",
   "navigationFolders": "المجلدات",

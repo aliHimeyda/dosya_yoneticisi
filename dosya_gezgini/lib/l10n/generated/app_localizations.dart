@@ -1,285 +1,464 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
-class AppLocalizations {
+import 'app_localizations_ar.dart';
+import 'app_localizations_en.dart';
+import 'app_localizations_tr.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'generated/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale);
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
-  static AppLocalizations? of(BuildContext context) {
-    return Localizations.of<AppLocalizations>(context, AppLocalizations);
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
   }
 
   static const LocalizationsDelegate<AppLocalizations> delegate =
       _AppLocalizationsDelegate();
 
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = [
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-  ];
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
-  static const List<Locale> supportedLocales = [
-    Locale('tr'),
-    Locale('en'),
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
+    Locale('en'),
+    Locale('tr'),
   ];
 
-  static const Map<String, Map<String, String>> _localizedValues = {
-    'en': {
-      'appTitle': 'File Explorer',
-      'actionLabel': 'Action',
-      'languageLabel': 'Language',
-      'themeMode': 'Theme Mode',
-      'deepCleanup': 'Deep Cleanup',
-      'privateFiles': 'Private Files',
-      'savedFiles': 'Saved Files',
-      'errorOccurred': 'Something went wrong',
-      'tryAgain': 'Try Again',
-      'recentlyVisited': 'Recently Visited',
-      'noOpenedFolder': 'No opened folder yet.',
-      'listEnd': '----------  End of List  ----------',
-      'categoryFiles': 'files',
-      'categoryExcel': 'excel',
-      'categoryImages': 'images',
-      'categoryVideos': 'videos',
-      'categoryAudio': 'audio',
-      'categoryWord': 'word',
-      'categoryPowerPoint': 'slides',
-      'categoryArchives': 'archive',
-      'categoryPdf': 'pdf',
-      'categoryText': 'text',
-      'folderEmpty': 'There are no files or folders in this directory.',
-      'searchHint': 'Search',
-      'createFolder': 'Create Folder',
-      'hiddenFiles': 'Hidden Files',
-      'paste': 'Paste',
-      'deleteWarning': 'Warning, selected items will be deleted!',
-      'delete': 'Delete',
-      'copy': 'Copy',
-      'cut': 'Cut',
-      'save': 'Save',
-      'hide': 'Hide',
-      'share': 'Share',
-      'rename': 'Rename',
-      'passwordHint': 'Enter password',
-      'incorrectPassword': 'Incorrect password',
-      'ok': 'OK',
-      'cancel': 'Cancel',
-      'newFolderDefaultName': 'new folder',
-      'deleteSuccess': 'Delete completed successfully',
-      'copied': 'Copied',
-      'newFolderCreated': 'New folder created',
-      'newFileAdded': 'New file added',
-      'renameSuccess': 'Rename completed successfully',
-      'savedSuccess': 'Saved',
-      'hiddenSuccess': 'Hidden',
-      'cleanupInProgress': 'Cleanup in progress...',
-      'operationCompleted': 'Operation completed',
-      'temporaryFilesCollected': 'Temporary files scanned',
-      'cacheFilesCollected': 'Cache files scanned',
-      'clean': 'Clean',
-      'navigationMenu': 'Menu',
-      'navigationRecent': 'Recent',
-      'navigationFolders': 'Folders',
-      'navigationSearch': 'Search',
-    },
-    'tr': {
-      'appTitle': 'Dosya Gezgini',
-      'actionLabel': 'İşlem',
-      'languageLabel': 'Dil',
-      'themeMode': 'Tema Modu',
-      'deepCleanup': 'Derin Temizleme',
-      'privateFiles': 'Özel Dosyalar',
-      'savedFiles': 'Kaydedilen Dosyalar',
-      'errorOccurred': 'Bir hata oluştu',
-      'tryAgain': 'Tekrar Dene',
-      'recentlyVisited': 'En Son Gezilenler',
-      'noOpenedFolder': 'Henüz açılmış klasör yok.',
-      'listEnd': '----------  Liste Sonu  ----------',
-      'categoryFiles': 'dosyalar',
-      'categoryExcel': 'excel',
-      'categoryImages': 'resimler',
-      'categoryVideos': 'videolar',
-      'categoryAudio': 'ses',
-      'categoryWord': 'word',
-      'categoryPowerPoint': 'sunum',
-      'categoryArchives': 'arşiv',
-      'categoryPdf': 'pdf',
-      'categoryText': 'metin',
-      'folderEmpty': 'Bu klasörde hiç dosya veya dizin yok.',
-      'searchHint': 'Arama yap',
-      'createFolder': 'Klasör Oluştur',
-      'hiddenFiles': 'Gizli Dosyalar',
-      'paste': 'Yapıştır',
-      'deleteWarning': 'Dikkat, seçimler silinecek!',
-      'delete': 'Sil',
-      'copy': 'Kopyala',
-      'cut': 'Kes',
-      'save': 'Kaydet',
-      'hide': 'Sakla',
-      'share': 'Paylaş',
-      'rename': 'Adlandır',
-      'passwordHint': 'Şifreyi giriniz',
-      'incorrectPassword': 'Şifre hatalı',
-      'ok': 'Tamam',
-      'cancel': 'İptal',
-      'newFolderDefaultName': 'yeni klasör',
-      'deleteSuccess': 'Silme işlemi başarılı',
-      'copied': 'Kopyalandı',
-      'newFolderCreated': 'Yeni klasör oluşturuldu',
-      'newFileAdded': 'Yeni dosya eklendi',
-      'renameSuccess': 'Adlandırma işlemi başarılı',
-      'savedSuccess': 'Kaydedildi',
-      'hiddenSuccess': 'Saklandı',
-      'cleanupInProgress': 'Temizlik devam ediyor...',
-      'operationCompleted': 'İşlem sonlandı',
-      'temporaryFilesCollected': 'Geçici dosyalar tarandı',
-      'cacheFilesCollected': 'Önbellek dosyaları tarandı',
-      'clean': 'Temizle',
-      'navigationMenu': 'Menü',
-      'navigationRecent': 'Son',
-      'navigationFolders': 'Klasörler',
-      'navigationSearch': 'Arama',
-    },
-    'ar': {
-      'appTitle': 'مستكشف الملفات',
-      'actionLabel': 'إجراء',
-      'languageLabel': 'اللغة',
-      'themeMode': 'وضع المظهر',
-      'deepCleanup': 'تنظيف عميق',
-      'privateFiles': 'الملفات الخاصة',
-      'savedFiles': 'الملفات المحفوظة',
-      'errorOccurred': 'حدث خطأ ما',
-      'tryAgain': 'حاول مرة أخرى',
-      'recentlyVisited': 'تمت زيارته مؤخرًا',
-      'noOpenedFolder': 'لا يوجد مجلد مفتوح بعد.',
-      'listEnd': '----------  نهاية القائمة  ----------',
-      'categoryFiles': 'ملفات',
-      'categoryExcel': 'إكسل',
-      'categoryImages': 'صور',
-      'categoryVideos': 'فيديو',
-      'categoryAudio': 'صوت',
-      'categoryWord': 'وورد',
-      'categoryPowerPoint': 'عروض',
-      'categoryArchives': 'أرشيف',
-      'categoryPdf': 'بي دي إف',
-      'categoryText': 'نص',
-      'folderEmpty': 'لا توجد ملفات أو مجلدات في هذا الدليل.',
-      'searchHint': 'بحث',
-      'createFolder': 'إنشاء مجلد',
-      'hiddenFiles': 'الملفات المخفية',
-      'paste': 'لصق',
-      'deleteWarning': 'تحذير، سيتم حذف العناصر المحددة!',
-      'delete': 'حذف',
-      'copy': 'نسخ',
-      'cut': 'قص',
-      'save': 'حفظ',
-      'hide': 'إخفاء',
-      'share': 'مشاركة',
-      'rename': 'إعادة تسمية',
-      'passwordHint': 'أدخل كلمة المرور',
-      'incorrectPassword': 'كلمة المرور غير صحيحة',
-      'ok': 'موافق',
-      'cancel': 'إلغاء',
-      'newFolderDefaultName': 'مجلد جديد',
-      'deleteSuccess': 'اكتملت عملية الحذف بنجاح',
-      'copied': 'تم النسخ',
-      'newFolderCreated': 'تم إنشاء مجلد جديد',
-      'newFileAdded': 'تمت إضافة ملف جديد',
-      'renameSuccess': 'اكتملت إعادة التسمية بنجاح',
-      'savedSuccess': 'تم الحفظ',
-      'hiddenSuccess': 'تم الإخفاء',
-      'cleanupInProgress': 'التنظيف جارٍ...',
-      'operationCompleted': 'اكتملت العملية',
-      'temporaryFilesCollected': 'تم فحص الملفات المؤقتة',
-      'cacheFilesCollected': 'تم فحص ملفات التخزين المؤقت',
-      'clean': 'تنظيف',
-      'navigationMenu': 'القائمة',
-      'navigationRecent': 'الأخيرة',
-      'navigationFolders': 'المجلدات',
-      'navigationSearch': 'بحث',
-    },
-  };
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'File Explorer'**
+  String get appTitle;
 
-  String _value(String key) {
-    final normalizedLocale = localeName.split('_').first;
-    return _localizedValues[normalizedLocale]?[key] ??
-        _localizedValues['en']![key]!;
-  }
+  /// No description provided for @actionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get actionLabel;
 
-  String get appTitle => _value('appTitle');
-  String get actionLabel => _value('actionLabel');
-  String get languageLabel => _value('languageLabel');
-  String get themeMode => _value('themeMode');
-  String get deepCleanup => _value('deepCleanup');
-  String get privateFiles => _value('privateFiles');
-  String get savedFiles => _value('savedFiles');
-  String get errorOccurred => _value('errorOccurred');
-  String get tryAgain => _value('tryAgain');
-  String get recentlyVisited => _value('recentlyVisited');
-  String get noOpenedFolder => _value('noOpenedFolder');
-  String get listEnd => _value('listEnd');
-  String get categoryFiles => _value('categoryFiles');
-  String get categoryExcel => _value('categoryExcel');
-  String get categoryImages => _value('categoryImages');
-  String get categoryVideos => _value('categoryVideos');
-  String get categoryAudio => _value('categoryAudio');
-  String get categoryWord => _value('categoryWord');
-  String get categoryPowerPoint => _value('categoryPowerPoint');
-  String get categoryArchives => _value('categoryArchives');
-  String get categoryPdf => _value('categoryPdf');
-  String get categoryText => _value('categoryText');
-  String get folderEmpty => _value('folderEmpty');
-  String get searchHint => _value('searchHint');
-  String get createFolder => _value('createFolder');
-  String get hiddenFiles => _value('hiddenFiles');
-  String get paste => _value('paste');
-  String get deleteWarning => _value('deleteWarning');
-  String get delete => _value('delete');
-  String get copy => _value('copy');
-  String get cut => _value('cut');
-  String get save => _value('save');
-  String get hide => _value('hide');
-  String get share => _value('share');
-  String get rename => _value('rename');
-  String get passwordHint => _value('passwordHint');
-  String get incorrectPassword => _value('incorrectPassword');
-  String get ok => _value('ok');
-  String get cancel => _value('cancel');
-  String get newFolderDefaultName => _value('newFolderDefaultName');
-  String get deleteSuccess => _value('deleteSuccess');
-  String get copied => _value('copied');
-  String get newFolderCreated => _value('newFolderCreated');
-  String get newFileAdded => _value('newFileAdded');
-  String get renameSuccess => _value('renameSuccess');
-  String get savedSuccess => _value('savedSuccess');
-  String get hiddenSuccess => _value('hiddenSuccess');
-  String get cleanupInProgress => _value('cleanupInProgress');
-  String get operationCompleted => _value('operationCompleted');
-  String get temporaryFilesCollected => _value('temporaryFilesCollected');
-  String get cacheFilesCollected => _value('cacheFilesCollected');
-  String get clean => _value('clean');
-  String get navigationMenu => _value('navigationMenu');
-  String get navigationRecent => _value('navigationRecent');
-  String get navigationFolders => _value('navigationFolders');
-  String get navigationSearch => _value('navigationSearch');
+  /// No description provided for @languageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get languageLabel;
 
-  String cleanupWillFree(String size) {
-    final normalizedLocale = localeName.split('_').first;
-    switch (normalizedLocale) {
-      case 'tr':
-        return '$size MB boşaltılacak';
-      case 'ar':
-        return 'سيتم تحرير $size ميجابايت';
-      default:
-        return '$size MB will be freed';
-    }
-  }
+  /// No description provided for @themeMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme Mode'**
+  String get themeMode;
+
+  /// No description provided for @deepCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Cleanup'**
+  String get deepCleanup;
+
+  /// No description provided for @privateFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Files'**
+  String get privateFiles;
+
+  /// No description provided for @savedFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Files'**
+  String get savedFiles;
+
+  /// No description provided for @errorOccurred.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get errorOccurred;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get tryAgain;
+
+  /// No description provided for @recentlyVisited.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently Visited'**
+  String get recentlyVisited;
+
+  /// No description provided for @noOpenedFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'No opened folder yet.'**
+  String get noOpenedFolder;
+
+  /// No description provided for @listEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'----------  End of List  ----------'**
+  String get listEnd;
+
+  /// No description provided for @categoryFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'files'**
+  String get categoryFiles;
+
+  /// No description provided for @categoryExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'excel'**
+  String get categoryExcel;
+
+  /// No description provided for @categoryImages.
+  ///
+  /// In en, this message translates to:
+  /// **'images'**
+  String get categoryImages;
+
+  /// No description provided for @categoryVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'videos'**
+  String get categoryVideos;
+
+  /// No description provided for @categoryAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'audio'**
+  String get categoryAudio;
+
+  /// No description provided for @categoryWord.
+  ///
+  /// In en, this message translates to:
+  /// **'word'**
+  String get categoryWord;
+
+  /// No description provided for @categoryPowerPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'slides'**
+  String get categoryPowerPoint;
+
+  /// No description provided for @categoryArchives.
+  ///
+  /// In en, this message translates to:
+  /// **'archive'**
+  String get categoryArchives;
+
+  /// No description provided for @categoryPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'pdf'**
+  String get categoryPdf;
+
+  /// No description provided for @categoryText.
+  ///
+  /// In en, this message translates to:
+  /// **'text'**
+  String get categoryText;
+
+  /// No description provided for @folderEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no files or folders in this directory.'**
+  String get folderEmpty;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get searchHint;
+
+  /// No description provided for @searchMinCharacters.
+  ///
+  /// In en, this message translates to:
+  /// **'Type at least {count} characters to search.'**
+  String searchMinCharacters(int count);
+
+  /// No description provided for @noSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No search results found.'**
+  String get noSearchResults;
+
+  /// No description provided for @createFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Folder'**
+  String get createFolder;
+
+  /// No description provided for @hiddenFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden Files'**
+  String get hiddenFiles;
+
+  /// No description provided for @paste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get paste;
+
+  /// No description provided for @deleteWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning, selected items will be deleted!'**
+  String get deleteWarning;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
+
+  /// No description provided for @cut.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut'**
+  String get cut;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @hide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get hide;
+
+  /// No description provided for @share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get share;
+
+  /// No description provided for @rename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get rename;
+
+  /// No description provided for @passwordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter password'**
+  String get passwordHint;
+
+  /// No description provided for @incorrectPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password'**
+  String get incorrectPassword;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @newFolderDefaultName.
+  ///
+  /// In en, this message translates to:
+  /// **'new folder'**
+  String get newFolderDefaultName;
+
+  /// No description provided for @deleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete completed successfully'**
+  String get deleteSuccess;
+
+  /// No description provided for @copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get copied;
+
+  /// No description provided for @newFolderCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'New folder created'**
+  String get newFolderCreated;
+
+  /// No description provided for @newFileAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'New file added'**
+  String get newFileAdded;
+
+  /// No description provided for @renameSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename completed successfully'**
+  String get renameSuccess;
+
+  /// No description provided for @savedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get savedSuccess;
+
+  /// No description provided for @hiddenSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get hiddenSuccess;
+
+  /// No description provided for @cleanupInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup in progress...'**
+  String get cleanupInProgress;
+
+  /// No description provided for @operationCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation completed'**
+  String get operationCompleted;
+
+  /// No description provided for @temporaryFilesCollected.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary files scanned'**
+  String get temporaryFilesCollected;
+
+  /// No description provided for @cacheFilesCollected.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache files scanned'**
+  String get cacheFilesCollected;
+
+  /// No description provided for @cleanupWillFree.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} MB will be freed'**
+  String cleanupWillFree(String size);
+
+  /// No description provided for @clean.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean'**
+  String get clean;
+
+  /// No description provided for @categoryIndexPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing {category} files...'**
+  String categoryIndexPreparing(String category);
+
+  /// No description provided for @navigationMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get navigationMenu;
+
+  /// No description provided for @navigationRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get navigationRecent;
+
+  /// No description provided for @navigationFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders'**
+  String get navigationFolders;
+
+  /// No description provided for @navigationSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get navigationSearch;
 }
 
 class _AppLocalizationsDelegate
@@ -287,16 +466,33 @@ class _AppLocalizationsDelegate
   const _AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) =>
-      ['tr', 'en', 'ar'].contains(locale.languageCode);
-
-  @override
   Future<AppLocalizations> load(Locale locale) {
-    return SynchronousFuture<AppLocalizations>(
-      AppLocalizations(locale.languageCode),
-    );
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
   }
 
   @override
+  bool isSupported(Locale locale) =>
+      <String>['ar', 'en', 'tr'].contains(locale.languageCode);
+
+  @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'ar':
+      return AppLocalizationsAr();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'tr':
+      return AppLocalizationsTr();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

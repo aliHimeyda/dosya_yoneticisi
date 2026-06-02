@@ -1,16 +1,48 @@
 import 'package:dosya_gezgini/app/app.dart';
 import 'package:dosya_gezgini/core/localization/locale_provider.dart';
 import 'package:dosya_gezgini/core/theme/app_theme.dart';
+import 'package:dosya_gezgini/data/repositories/category_repository.dart';
+import 'package:dosya_gezgini/data/repositories/file_index_repository.dart';
+import 'package:dosya_gezgini/data/repositories/hidden_repository.dart';
+import 'package:dosya_gezgini/data/repositories/recent_repository.dart';
+import 'package:dosya_gezgini/data/repositories/saved_repository.dart';
+import 'package:dosya_gezgini/data/repositories/search_repository.dart';
+import 'package:dosya_gezgini/data/services/category_query_service.dart';
+import 'package:dosya_gezgini/data/services/file_index_service.dart';
+import 'package:dosya_gezgini/data/services/file_system_service.dart';
+import 'package:dosya_gezgini/data/services/hive_service.dart';
+import 'package:dosya_gezgini/data/services/search_query_service.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/dosyaislemleri.dart';
 import 'package:dosya_gezgini/features/files/state/izinler.dart';
 import 'package:dosya_gezgini/features/menu/state/localestoragebilgileri.dart';
+import 'package:dosya_gezgini/features/search/state/search_controller.dart'
+    as search_state;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final hiveService = HiveService();
+  await hiveService.init();
+  final fileIndexRepository = FileIndexRepository(hiveService);
+  final recentRepository = RecentRepository(hiveService);
+  final savedRepository = SavedRepository(hiveService);
+  final hiddenRepository = HiddenRepository(hiveService);
+  final fileSystemService = FileSystemService();
+  final fileIndexService = FileIndexService(
+    repository: fileIndexRepository,
+    fileSystemService: fileSystemService,
+  );
+  final categoryRepository = CategoryRepository(
+    fileIndexService: fileIndexService,
+    categoryQueryService: CategoryQueryService(fileIndexRepository),
+  );
+  final searchRepository = SearchRepository(
+    fileIndexService: fileIndexService,
+    searchQueryService: SearchQueryService(fileIndexRepository),
+  );
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -19,18 +51,65 @@ Future<void> bootstrap() async {
     ),
   );
 
-  runApp(buildApp());
+  runApp(
+    buildApp(
+      hiveService: hiveService,
+      fileIndexRepository: fileIndexRepository,
+      recentRepository: recentRepository,
+      savedRepository: savedRepository,
+      hiddenRepository: hiddenRepository,
+      fileIndexService: fileIndexService,
+      categoryRepository: categoryRepository,
+      searchRepository: searchRepository,
+    ),
+  );
 }
 
-Widget buildApp() {
+Widget buildApp({
+  required HiveService hiveService,
+  required FileIndexRepository fileIndexRepository,
+  required RecentRepository recentRepository,
+  required SavedRepository savedRepository,
+  required HiddenRepository hiddenRepository,
+  required FileIndexService fileIndexService,
+  required CategoryRepository categoryRepository,
+  required SearchRepository searchRepository,
+}) {
   return MultiProvider(
     providers: [
+      Provider<HiveService>.value(value: hiveService),
+      Provider<FileIndexRepository>.value(value: fileIndexRepository),
+      Provider<RecentRepository>.value(value: recentRepository),
+      Provider<SavedRepository>.value(value: savedRepository),
+      Provider<HiddenRepository>.value(value: hiddenRepository),
+      Provider<FileIndexService>.value(value: fileIndexService),
+      Provider<CategoryRepository>.value(value: categoryRepository),
+      Provider<SearchRepository>.value(value: searchRepository),
       ChangeNotifierProvider(create: (_) => AppTheme()),
-      ChangeNotifierProvider(create: (_) => LocaleProvider()..loadSavedLocale()),
-      ChangeNotifierProvider(create: (_) => Dosyaislemleri()),
+      ChangeNotifierProvider(
+        create: (_) => LocaleProvider()..loadSavedLocale(),
+      ),
+      ChangeNotifierProvider(
+        create:
+            (_) => Dosyaislemleri(
+              savedRepository: savedRepository,
+              hiddenRepository: hiddenRepository,
+            ),
+      ),
       ChangeNotifierProvider(create: (_) => Altislemprovider()),
       ChangeNotifierProvider(
-        create: (_) => Izinler()..requestAllStoragePermission(),
+        create:
+            (_) => search_state.SearchController(
+              searchRepository: searchRepository,
+            ),
+      ),
+      ChangeNotifierProvider(
+        create:
+            (_) => Izinler(
+              recentRepository: recentRepository,
+              savedRepository: savedRepository,
+              hiddenRepository: hiddenRepository,
+            )..requestAllStoragePermission(),
       ),
       ChangeNotifierProvider(
         create: (_) => Localestoragebilgileri()..depolamabilgilernigetir(),
