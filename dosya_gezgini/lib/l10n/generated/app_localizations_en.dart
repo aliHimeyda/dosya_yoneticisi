@@ -110,6 +110,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cut => 'Cut';
 
   @override
+  String get cutReady => 'Added to clipboard for moving';
+
+  @override
   String get save => 'Save';
 
   @override
@@ -120,6 +123,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rename => 'Rename';
+
+  @override
+  String get overwrite => 'Overwrite';
+
+  @override
+  String get copyWithNewName => 'Copy with new name';
+
+  @override
+  String get skip => 'Skip';
 
   @override
   String get passwordHint => 'Enter password';
@@ -156,6 +168,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hiddenSuccess => 'Hidden';
+
+  @override
+  String get pasteSuccess => 'Paste completed successfully';
+
+  @override
+  String get invalidName => 'Enter a valid name';
+
+  @override
+  String get itemAlreadyExists => 'An item with the same name already exists';
+
+  @override
+  String get insufficientStorageSpace => 'Not enough free space';
+
+  @override
+  String get operationDeleting => 'Deleting items...';
+
+  @override
+  String get operationCopying => 'Copying items...';
+
+  @override
+  String get operationMoving => 'Moving items...';
+
+  @override
+  String get nameConflictTitle => 'Name conflict';
+
+  @override
+  String nameConflictMessage(String name) {
+    return '$name already exists. How would you like to continue?';
+  }
 
   @override
   String get cleanupInProgress => 'Cleanup in progress...';

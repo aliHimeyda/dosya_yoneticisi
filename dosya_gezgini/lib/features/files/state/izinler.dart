@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:dosya_gezgini/core/constants/storage_paths.dart';
 import 'package:dosya_gezgini/data/models/recent_item_model.dart';
+import 'package:dosya_gezgini/data/repositories/directory_cache_repository.dart';
+import 'package:dosya_gezgini/data/repositories/folder_count_repository.dart';
 import 'package:dosya_gezgini/data/repositories/hidden_repository.dart';
 import 'package:dosya_gezgini/data/repositories/recent_repository.dart';
 import 'package:dosya_gezgini/data/repositories/saved_repository.dart';
@@ -13,16 +15,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class Izinler extends ChangeNotifier {
   Izinler({
+    required DirectoryCacheRepository directoryCacheRepository,
+    required FolderCountRepository folderCountRepository,
     required RecentRepository recentRepository,
     required SavedRepository savedRepository,
     required HiddenRepository hiddenRepository,
   }) : _recentRepository = recentRepository,
+       _folderCountRepository = folderCountRepository,
        _savedRepository = savedRepository,
        _hiddenRepository = hiddenRepository,
-       fileTree = FileTree(storageRootPath) {
+       fileTree = FileTree(
+         storageRootPath,
+         directoryCacheRepository: directoryCacheRepository,
+         folderCountRepository: folderCountRepository,
+       ) {
     fileTree.addListener(notifyListeners);
   }
 
+  final FolderCountRepository _folderCountRepository;
   final RecentRepository _recentRepository;
   final SavedRepository _savedRepository;
   final HiddenRepository _hiddenRepository;
@@ -220,7 +230,7 @@ class Izinler extends ChangeNotifier {
     }
 
     await syncHiddenEntries();
-    await fileTree.buildTree();
+    await fileTree.buildTree(forceRefresh: true);
     await syncSavedEntries();
     await syncRecentEntries();
     notifyListeners();
@@ -232,6 +242,20 @@ class Izinler extends ChangeNotifier {
 
   Future<void> refreshSavedEntries() async {
     await syncSavedEntries();
+  }
+
+  Future<void> ensureFolderCount(
+    FolderNode folder, {
+    bool refresh = false,
+  }) async {
+    await fileTree.ensureFolderCount(folder, refresh: refresh);
+  }
+
+  Future<void> primeFolderCounts(
+    Iterable<FolderNode> folders, {
+    bool refresh = false,
+  }) async {
+    await fileTree.primeFolderCounts(folders, refresh: refresh);
   }
 
   Future<void> addRecentFolderEntry(FolderNode folder) async {
@@ -310,15 +334,18 @@ class Izinler extends ChangeNotifier {
 
       paths.add(path);
       if (isDirectory) {
-        folders.add(
-          FolderNode(
-            pathinfo.basename(path).isEmpty ? path : pathinfo.basename(path),
-            path,
-            [],
-            [],
-            null,
-          ),
+        final folder = FolderNode(
+          pathinfo.basename(path).isEmpty ? path : pathinfo.basename(path),
+          path,
+          [],
+          [],
+          null,
         );
+        final cachedCount = await _folderCountRepository.read(path);
+        if (cachedCount != null) {
+          folder.applyFolderCountModel(cachedCount, notify: false);
+        }
+        folders.add(folder);
       } else {
         files.add(File(path));
       }

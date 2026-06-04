@@ -1,7 +1,6 @@
 // ignore_for_file: avoid_unnecessary_containers
 import 'dart:io';
 import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
-import 'package:dosya_gezgini/core/theme/app_theme.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:dosya_gezgini/app/router/app_router.dart';
 import 'package:dosya_gezgini/features/files/state/izinler.dart';

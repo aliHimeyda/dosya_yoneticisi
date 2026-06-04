@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:dosya_gezgini/features/files/presentation/widgets/dosya_folder.dart';
 import 'package:dosya_gezgini/features/files/state/folderleragaci.dart';
+import 'package:dosya_gezgini/features/files/state/izinler.dart';
 import 'package:dosya_gezgini/shared/pagination/paginated_controller.dart';
 import 'package:dosya_gezgini/shared/widgets/file_item_skeleton.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// A self-contained paginated list of [FolderNode] and [File] items.
 ///
@@ -43,6 +45,7 @@ class _PaginatedFileListViewState extends State<PaginatedFileListView> {
     super.initState();
     _ctrl.setData(widget.folders, widget.files);
     _scrollController.addListener(_handleScroll);
+    _primeVisibleFolderCounts(refresh: false);
   }
 
   @override
@@ -54,6 +57,7 @@ class _PaginatedFileListViewState extends State<PaginatedFileListView> {
         _ctrl.setData(widget.folders, widget.files);
         _isLoadingMore = false;
       });
+      _primeVisibleFolderCounts(refresh: true);
     }
   }
 
@@ -83,7 +87,17 @@ class _PaginatedFileListViewState extends State<PaginatedFileListView> {
         _ctrl.loadNextPage();
         _isLoadingMore = false;
       });
+      _primeVisibleFolderCounts(refresh: false);
     });
+  }
+
+  void _primeVisibleFolderCounts({required bool refresh}) {
+    unawaited(
+      context.read<Izinler>().primeFolderCounts(
+        _ctrl.visibleFolders,
+        refresh: refresh,
+      ),
+    );
   }
 
   @override

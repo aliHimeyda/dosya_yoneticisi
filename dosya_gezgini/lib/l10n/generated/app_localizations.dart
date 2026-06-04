@@ -298,6 +298,12 @@ abstract class AppLocalizations {
   /// **'Cut'**
   String get cut;
 
+  /// No description provided for @cutReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to clipboard for moving'**
+  String get cutReady;
+
   /// No description provided for @save.
   ///
   /// In en, this message translates to:
@@ -321,6 +327,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rename'**
   String get rename;
+
+  /// No description provided for @overwrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Overwrite'**
+  String get overwrite;
+
+  /// No description provided for @copyWithNewName.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy with new name'**
+  String get copyWithNewName;
+
+  /// No description provided for @skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skip;
 
   /// No description provided for @passwordHint.
   ///
@@ -393,6 +417,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hidden'**
   String get hiddenSuccess;
+
+  /// No description provided for @pasteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste completed successfully'**
+  String get pasteSuccess;
+
+  /// No description provided for @invalidName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid name'**
+  String get invalidName;
+
+  /// No description provided for @itemAlreadyExists.
+  ///
+  /// In en, this message translates to:
+  /// **'An item with the same name already exists'**
+  String get itemAlreadyExists;
+
+  /// No description provided for @insufficientStorageSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough free space'**
+  String get insufficientStorageSpace;
+
+  /// No description provided for @operationDeleting.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting items...'**
+  String get operationDeleting;
+
+  /// No description provided for @operationCopying.
+  ///
+  /// In en, this message translates to:
+  /// **'Copying items...'**
+  String get operationCopying;
+
+  /// No description provided for @operationMoving.
+  ///
+  /// In en, this message translates to:
+  /// **'Moving items...'**
+  String get operationMoving;
+
+  /// No description provided for @nameConflictTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name conflict'**
+  String get nameConflictTitle;
+
+  /// No description provided for @nameConflictMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} already exists. How would you like to continue?'**
+  String nameConflictMessage(String name);
 
   /// No description provided for @cleanupInProgress.
   ///

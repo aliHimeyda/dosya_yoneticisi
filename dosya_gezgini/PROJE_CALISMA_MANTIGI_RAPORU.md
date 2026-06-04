@@ -599,12 +599,18 @@ Alanları:
 - `parent`
 - `isVirtual`
 - `allowedExtensions`
+- `areChildrenLoaded`
+- `folderCountModel`
 
 Önemli davranışları:
 
 - Gerçek klasörse constructor içinde `_olusumtarihi()` çağrılır.
 - Bu metod `FileStat.stat(path)` ile tarih bilgisini alır.
-- `replaceChildren(...)` ile çocuk listeleri atomik biçimde yenilenir.
+- `replaceChildren(...)` ile çocuk listeleri atomik biçimde yenilenir ve o klasörün çocuklarının artık gerçekten yüklendiği işaretlenir.
+- `childCount` yalnızca belleğe gerçekten yüklenmiş `folderchildren + filechildren` toplamını verir.
+- Liste kartlarında görünen item sayısı artık doğrudan `childCount` üzerinden okunmaz.
+- Bunun yerine `FolderCountModel` ile hydrate edilen `itemCountLabel` kullanılır.
+- `applyFolderCountModel(...)` bir klasörün `folderCount`, `fileCount`, `totalCount`, `isLoaded` ve `updatedAt` metadata'sını UI'a taşır.
 
 Not:
 
@@ -650,6 +656,65 @@ Task 8 sonrasında bu listeler doğrudan kalıcı veri kaynağı değildir. Gün
 Bu yüzden `kaydedilen*`, `gizlenen*` ve `ensongezilen*` listeleri artık tek gerçek kaynak
 değil, repository verisinin ekrana hazırlanmış yansımasıdır.
 
+### Klasör item count cache davranışı
+
+Task 11 sonrasında `FileTree` yalnızca klasör içeriği listelerini değil, klasör item sayısı
+metadata'sını da yönetir.
+
+Bu yapı için yeni kalıcı kaynak:
+
+- `lib/data/models/folder_count_model.dart`
+- `lib/data/repositories/folder_count_repository.dart`
+- Hive kutusu: `folder_count_cache`
+
+Her kayıt şu alanları taşır:
+
+- `path`
+- `folderCount`
+- `fileCount`
+- `totalCount`
+- `isLoaded`
+- `updatedAt`
+
+Çalışma mantığı:
+
+1. Liste ekranlarında görünür olan fiziksel klasör kartları `ensureFolderCount(...)` ile sayım ister.
+2. Önce bellekteki cache kontrol edilir.
+3. Bellekte yoksa Hive'daki `folder_count_cache` okunur.
+4. Cache bulunduysa klasör kartı `0` yerine kaydedilmiş toplam item sayısını hemen gösterebilir.
+5. Cache yoksa sayım işi arka plan kuyruğuna alınır.
+6. Kuyruk en fazla sınırlı sayıda işi aynı anda çalıştırır; böylece UI thread'i gereksiz yüklenmez.
+7. Sayım tamamlanınca `FolderCountModel` Hive'a yazılır ve ilgili `FolderNode` güncellenir.
+
+Bu yüzden root, arama, kaydedilenler, gizliler ve son gezilenler gibi ekranlarda görülen
+klasör sayaçları artık çocuk listelerin o an bellekte yüklü olup olmamasına bağlı değildir.
+
+### Directory content cache davranışı
+
+Task 12 sonrasında `FileTree` gerçek klasör içeriklerini de ayrı bir cache katmanı ile yönetir.
+
+Bu yapı için yeni kalıcı kaynak:
+
+- `lib/data/models/directory_cache_model.dart`
+- `lib/data/repositories/directory_cache_repository.dart`
+- Hive kutusu: `directory_cache_box`
+
+Her kayıt şu alanları taşır:
+
+- `path`
+- `folderPaths`
+- `filePaths`
+- `directoryModifiedAt`
+- `updatedAt`
+
+Bu cache'in görevi şudur:
+
+- klasör açılır açılmaz daha önce görülmüş içeriği hızlıca ekrana basmak
+- aynı klasöre her dönüşte gereksiz dosya sistemi taramasını azaltmak
+- manuel refresh geldiğinde gerçek dosya sisteminden yeni snapshot üretmek
+- klasör silinmişse ilgili cache kaydını otomatik temizlemek
+- cache yaşı veya klasör modified date değişimine göre invalidation kararı vermek
+
 ### Sanal kategori klasörleri
 
 `FileTree` hâlâ gerçek dosya sisteminin dışında sanal kategori klasörleri üretir:
@@ -682,13 +747,23 @@ Gerçek kategori verisi artık `lib/data/` katmanında yönetilir:
 
 ### `buildTree()`
 
-Sadece şunu yapar:
+Root klasörü tamamen recursive kurmaz; yalnızca root için `loadFolder(root)` çağırır.
+
+Ancak Task 12 sonrasında bu çağrı da doğrudan dosya sistemi okumak zorunda değildir:
+
+- önce root için `directory_cache_box` içindeki cache snapshot'ı aranır
+- varsa root liste cache'ten hydrate edilir
+- cache geçerliyse başlangıç yüklemesi oradan tamamlanabilir
+- cache eskiyse veya invalid ise gerçek dosya sistemi refresh'i çalışır
+
+Yani başlangıç davranışı artık şu mantığa yaklaşır:
 
 ```text
 loadFolder(root)
 ```
 
-Yani tüm ağacı recursive inşa etmez. İsmi ağaç olsa da çalışma biçimi lazy'dir.
+İsmi ağaç olsa da çalışma biçimi hâlâ lazy'dir; sadece root için ilk görünen veri artık
+cache katmanı üzerinden hızlandırılabilir.
 
 ### `loadFolder(FolderNode folder)`
 
@@ -696,21 +771,37 @@ Burada artık iki farklı veri davranışı vardır:
 
 #### Gerçek klasör
 
-`folder.isVirtual == false` ise `_loadDirectoryFolder(folder)` çalışır.
+`folder.isVirtual == false` ise `_loadDirectoryFolder(folder, forceRefresh: ...)` çalışır.
 
 Bu metod:
 
 1. `Directory(folder.path)` oluşturur
-2. klasör varsa `dir.list(followLinks: false)` ile doğrudan çocukları gezer
-3. alt klasörleri `FolderNode` olarak üretir
-4. dosyaları `File` olarak toplar
-5. alfabetik sıralar
-6. `folder.replaceChildren(...)` yapar
+2. klasör yoksa önce ilgili directory cache temizlenir, sonra hata döner
+3. klasör varsa mevcut klasörün `FileStat.modified` değeri okunur
+4. `directory_cache_box` içinde bu path için kayıt varsa önce cache snapshot'ı hydrate edilebilir
+5. cache snapshot hydrate edildiğinde kullanıcı ilk veriyi beklemeden görebilir
+6. ardından invalidation kontrolü yapılır:
+7. cache süresi aşılmış mı?
+8. klasör modified date değişmiş mi?
+9. manuel `forceRefresh` istenmiş mi?
+10. refresh gerekmiyorsa cache doğrudan kullanılabilir ve gereksiz dosya sistemi okuması atlanır
+11. refresh gerekiyorsa `dir.list(followLinks: false)` ile gerçek çocuklar okunur
+12. alt klasörler `FolderNode` olarak üretilir
+13. eğer o alt klasör için önceden bilinen sayaç cache'i varsa yeni node'a hemen hydrate edilir
+14. dosyalar `File` olarak toplanır
+15. alfabetik sıralanır
+16. final snapshot `folder.replaceChildren(...)` ile uygulanır
+17. yeni klasör içeriği `DirectoryCacheModel` olarak `directory_cache_box` içine yazılır
+18. aynı anda ilgili klasörün gerçek `folderCount/fileCount/totalCount` bilgisi de `FolderCountModel` olarak cache'e yazılır
 
 Yani:
 
 - sadece bir seviye içeriği yükler
 - recursive yükleme yapmaz
+- önce cache snapshot gösterebilir
+- invalidation kontrolü geçiyorsa gereksiz refresh'i atlayabilir
+- refresh sırasında mevcut görünür snapshot varsa partial ilerleme ile ekranı küçültmez; final sonuç gelene kadar mevcut liste görünür kalır
+- açılmış klasör için kesin item sayısını aynı anda kalıcı cache'e de taşır
 
 #### Sanal klasör
 
@@ -755,6 +846,39 @@ Bu da önemli bir tasarım detayı:
 - dosya araması `startsWith`
 
 ## 6.8 `Dosyaislemleri`
+### Task 14 sonrası güncel operasyon mimarisi
+
+Task 14 sonrasında `Dosyaislemleri`, gerçek dosya sistemi işini doğrudan yapan sınıf
+değil; seçim, clipboard ve progress state'ini yöneten provider katmanıdır.
+
+Fiziksel operasyonlar artık şu katmanda toplanır:
+
+- `lib/data/models/file_operation_models.dart`
+- `lib/data/services/file_operation_service.dart`
+
+Yeni davranış özeti:
+
+- `kopyala(...)` seçili öğeleri clipboard state'ine alır
+- `kes(...)` artık orijinali hemen silmez; yalnızca clipboard'ı cut moduna alır
+- gerçek taşıma `yapistir(...)` sırasında yapılır
+- paste öncesinde boş alan ve hedef çakışması kontrol edilir
+- aynı isim varsa kullanıcıya `üzerine yaz / yeni isimle kopyala / atla / iptal`
+  seçenekleri sunulur
+- move akışında servis önce hedefe kopyalar, doğrulama sonrası source'u siler
+- silme ve rename akışları servis içinde geçerli isim, hedef varlığı ve entity
+  varlığı kontrolleriyle çalışır
+- büyük batch işlemlerde provider geçici bir progress dialog açar ve servis
+  progress callback'leriyle bu dialog güncellenir
+- fiziksel değişiklikten sonra `Izinler.refreshRootEntries()` ve gerekirse
+  `fileTree.loadFolder(..., forceRefresh: true)` ile görünür liste/cache state'i yenilenir
+- arama ve kategori tarafında kullanılan Hive index için
+  `FileIndexService.refreshIndex(...)` arka planda tetiklenir
+
+Bu nedenle Task 14 sonrası doğru yorum şudur:
+
+- `Dosyaislemleri` = UI state + orchestration
+- `FileOperationService` = güvenli fiziksel dosya operasyonları
+- repository + `Izinler` sync akışı = kalıcı kayıtlar ve görünür liste yenileme
 
 ### GÃ¼ncel arama davranÄ±ÅŸÄ±
 
@@ -877,6 +1001,17 @@ Task 9 sonrasında liste verisi `PaginatedFileListView` üzerinden gösterilir:
 - Yükleme sırasında listenin alt kısmında `FileItemSkeleton` placeholder'ları gösterilir.
 - Veri değiştiğinde (Selector tetiklendiğinde) pagination ilk 100 öğeye sıfırlanır.
 
+Task 12 sonrasında root liste için ek davranış vardır:
+
+- uygulama açılışında root klasör mümkünse önce `directory_cache_box` içinden hydrate edilir
+- bu sayede kullanıcı root ekranında daha hızlı ilk içerik görebilir
+- cache süresi dolmuşsa veya root modified date değişmişse gerçek dosya sistemi refresh'i devreye girer
+- pull-to-refresh `Izinler.refreshRootEntries()` üzerinden `fileTree.buildTree(forceRefresh: true)` çalıştırır
+- manuel refresh cache'i yalnızca okumakla kalmaz, yeni dosya sistemi snapshot'ı ile günceller
+
+Bu yüzden `/dosyalar` ekranı artık yalnızca root çocuklarını gösteren basit bir liste değil,
+aynı zamanda root klasör cache'inin görünür yüzüdür.
+
 Başka bir ifadeyle:
 
 - `/dosyalar` = kök dizin görünümü
@@ -894,15 +1029,24 @@ Ekran açılır açılmaz:
 - hedef klasör için sayfa içi state hazırlanır
 - gerekiyorsa query path'ten `FolderNode` referansı yeniden çözülür
 - görünür klasör bilgisi breadcrumb ve dosya operasyonları için provider ile senkronize edilir
-- içerik `fileTree.loadFolder(..., onProgress: ...)` ile sayfa içinde async yüklenir
-- ilk aşamada shared `FolderListSkeleton` gösterilir
-- klasör içeriği geldikçe liste parça parça ekrana basılır
-- yükleme tamamlanınca tam liste görünür
+- içerik `fileTree.loadFolder(..., forceRefresh: ..., onProgress: ...)` ile sayfa içinde async yüklenir
+- eğer klasör için geçerli cache varsa ilk aşamada cache snapshot gösterilir
+- cache yoksa shared `FolderListSkeleton` gösterilir
+- cache geçersizse veya manuel refresh istenmişse gerçek dosya sistemi arka planda çalışır
+- kullanıcı o sırada mevcut cache listesini görmeye devam eder
+- final refresh tamamlanınca tam liste güncel snapshot ile görünür
 - hata varsa `ErrorStateWidget`, boşsa `EmptyStateWidget` gösterilir
 
 Yani bu ekran artık sadece `Izinler.getCurrentFolder` verisini körlemesine render etmez.
 Provider aktif klasörü yardımcı UI state olarak tutar; asıl hedef klasör bilgisi route
 query path'i üzerinden taşınır ve yükleme sayfanın lifecycle akışında yapılır.
+
+Task 12 ile birlikte bu lifecycle içine şu cache davranışı da eklenmiştir:
+
+- `forceRefresh: false` ise sayfa önce cache kullanmayı dener
+- cache yaşı ve klasör modified date geçerliyse gereksiz dosya sistemi taraması atlanabilir
+- `RefreshIndicator` her zaman `forceRefresh: true` ile gerçek refresh ister
+- refresh sırasında mevcut görünen sayfalama penceresi mümkün olduğunca korunur; liste geçici olarak sıfıra düşmez
 
 Task 9 sonrasında dizin klasörleri de 100'er öğe ile sayfalanır:
 
@@ -1158,9 +1302,18 @@ Bu widget:
 
 - klasör ikonunu ve adını gösterir
 - oluşturulma/değişim tarihini gösterir
+- item sayısını doğrudan `childCount` yerine `FolderCountModel` cache metadata'sından göstermeye çalışır
+- sayaç cache'i yoksa geçici olarak `-` gösterir; yanlışlıkla `0` göstermez
+- kendi `FolderNode` değişimlerini dinlediği için tarih veya sayaç bilgisi sonradan geldiğinde kart kendini yeniden çizer
 - seçim modunda seçili durumunu taşır
 - uzun basınca seçim moduna sokar
 - normal tıklamada klasör içine girer
+
+Ek davranış:
+
+- kart ekrana ilk geldiğinde fiziksel klasörse `Izinler.ensureFolderCount(...)` çağrısı tetiklenir
+- böylece yalnızca gerçekten görünür olan klasör kartları için arka planda sayaç işi başlatılır
+- aynı path için tekrar eden işler `FileTree` içindeki kuyruk mantığıyla bastırılır
 
 ### 8.2 Uzun basma akışı
 
@@ -1176,22 +1329,24 @@ Bu akış klasöre girmek için değil, toplu işlem moduna geçmek içindir.
 
 Kullanıcı klasör container'ına normal tıklayınca `onTap` içinde şu adımlar gerçekleşir:
 
-#### Adım 1: `Izinler` provider alınır
+#### Adım 1: `Izinler` provider okunur
 
 ```dart
-final izinler = Provider.of<Izinler>(context, listen: false);
+context.read<Izinler>()
 ```
 
-Bu provider son gezilenleri güncellemek ve görünür klasör state'ini senkronize
-etmek için kullanılır.
+Bu provider son gezilenler repository'sini güncellemek ve gerektiğinde klasör
+sayaç metadata'sını tetiklemek için kullanılır.
 
 #### Adım 2: Son gezilenler listesi güncellenir
 
 ```dart
-izinler.fileTree.ensongezilenfolders.add(widget.klasor);
+unawaited(context.read<Izinler>().addRecentFolderEntry(widget.klasor));
 ```
 
 Bu sayede kullanıcı daha sonra ana sayfadaki "son gezilenler" bölümünde bu klasörü tekrar görebilir.
+Kayıt artık doğrudan memory listesine eklenmez; önce `RecentRepository` içine path bazlı yazılır,
+ardından `Izinler.syncRecentEntries()` ile UI cache'i hydrate edilir.
 
 Bu adım route değişmeden önce yapılır.
 
@@ -1259,6 +1414,15 @@ Bu çok önemli:
 
 hepsi aynı `Klasor` widget'ını kullandığı için aynı akıştan geçer.
 
+Aynı tekrar kullanım, klasör item count cache davranışını da standartlaştırır:
+
+- root listede görülen klasörler
+- arama sonuçlarındaki klasörler
+- gizli ve kaydedilen klasörler
+- son gezilen klasörler
+
+aynı `FolderCountModel` + Hive cache mantığıyla sayaç gösterir.
+
 Yani "klasör tıklandı -> route `extra` hazırlandı -> sayfa hemen açıldı ->
 içerik sayfa içinde async yüklendi" mantığı uygulama genelinde tekrar eden
 standart davranıştır.
@@ -1278,8 +1442,13 @@ Akış:
 
 Ek notlar:
 
-- görsel dosyalarda küçük önizleme üretilir
-- videolarda `video_thumbnail` ile thumbnail cache kullanılır
+- görsel ve video thumbnail üretimi artık widget içinde doğrudan yapılmaz
+- `ThumbnailCacheService` önce Hive içindeki `thumbnail_cache_metadata` kaydını kontrol eder
+- geçerli thumbnail varsa uygulamanın cache dizinindeki dosya doğrudan gösterilir
+- thumbnail yoksa item önce normal dosya ikonuyla çizilir
+- üretim arka planda başlatılır ve tamamlanınca sadece ilgili `Dosya` item'ı yeniden çizilir
+- aynı dosya için tekrar tekrar thumbnail üretimi yapılmaz; servis aynı path için tek job tutar
+- video thumbnail üretimi limitli kuyrukla çalışır, hızlı scroll sırasında üretim ertelenebilir
 - zip dosyaları `getExternalStorageDirectory()/unzip` altına açılır
 
 ## 10. Path ve Klasör Gezinme Mantığı
@@ -1299,6 +1468,11 @@ Bu path:
 - `FileTree` kökü
 - aramanın başlangıç noktası
 - kategori taramasının başlangıç noktası
+
+Task 12 sonrasında bu path aynı zamanda root directory cache anahtarıdır:
+
+- `directory_cache_box['/storage/emulated/0']`
+- root klasör snapshot'ı bu key ile tutulur
 
 ### 10.2 Breadcrumb/path gösterimi
 
@@ -1325,6 +1499,13 @@ Bu çok önemli mimari detay:
 Yani kullanıcı root ekranında olabilir ama `/klasoricerigisayfasi?path=...` route'u
 açıldığında aktif klasör kimliği query path üzerinden kurulur.
 
+Aynı path bilgisi artık sadece navigasyon için değil, directory cache anahtarı olarak da kullanılır.
+Bu yüzden route path ile cache path birbiriyle uyumludur:
+
+- hangi klasör açıldıysa aynı string cache key olur
+- aynı klasöre geri dönüldüğünde önce cache okunabilir
+- manuel refresh geldiğinde yine aynı key üzerindeki cache kaydı güncellenir
+
 ### 10.4 Sanal klasör path'leri
 
 Kategori klasörlerinde gerçek path yoktur. Örnek yapı:
@@ -1342,6 +1523,23 @@ Bu nedenle:
 - eşleşen kategori doğrudan dosya sisteminde aranmaz; önce Hive index hazır mı kontrol edilir
 - sonuçlar `CategoryRepository` üzerinden index kutusundan okunur
 - bu yüzden sanal path, hem UI kimliği hem de kategori sorgu anahtarı olarak kullanılır
+
+### 10.5 Directory cache ve invalidation mantığı
+
+Fiziksel klasörler için path artık directory cache anahtarı olarak da kullanılır.
+
+Çalışma mantığı:
+
+1. kullanıcı bir klasör path'i ile sayfayı açar
+2. `FileTree` önce aynı path için `directory_cache_box` kaydını arar
+3. kayıt varsa cache snapshot UI'a hızlıca verilebilir
+4. sonra cache yaşı ve klasör modified date kontrol edilir
+5. geçerliyse gereksiz dosya sistemi taraması atlanabilir
+6. geçersizse veya kullanıcı refresh yapmışsa gerçek dosya sistemi okunur
+7. final sonuç yine aynı path key'i altında cache'e geri yazılır
+
+Bu yapı sayesinde path artık yalnızca routing kimliği değil, aynı zamanda klasör içeriği
+cache yaşam döngüsünün de temel anahtarıdır.
 
 ## 11. `Anasayfa` Shell Sayfasının Rolü
 

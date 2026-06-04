@@ -110,6 +110,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cut => 'قص';
 
   @override
+  String get cutReady => 'تمت الإضافة إلى الحافظة للنقل';
+
+  @override
   String get save => 'حفظ';
 
   @override
@@ -120,6 +123,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get rename => 'إعادة تسمية';
+
+  @override
+  String get overwrite => 'استبدال';
+
+  @override
+  String get copyWithNewName => 'النسخ باسم جديد';
+
+  @override
+  String get skip => 'تخطي';
 
   @override
   String get passwordHint => 'أدخل كلمة المرور';
@@ -156,6 +168,35 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get hiddenSuccess => 'تم الإخفاء';
+
+  @override
+  String get pasteSuccess => 'اكتملت عملية اللصق بنجاح';
+
+  @override
+  String get invalidName => 'أدخل اسماً صالحاً';
+
+  @override
+  String get itemAlreadyExists => 'يوجد عنصر آخر بالاسم نفسه';
+
+  @override
+  String get insufficientStorageSpace => 'لا توجد مساحة خالية كافية';
+
+  @override
+  String get operationDeleting => 'جارٍ حذف العناصر...';
+
+  @override
+  String get operationCopying => 'جارٍ نسخ العناصر...';
+
+  @override
+  String get operationMoving => 'جارٍ نقل العناصر...';
+
+  @override
+  String get nameConflictTitle => 'يوجد تعارض في الاسم';
+
+  @override
+  String nameConflictMessage(String name) {
+    return '$name موجود بالفعل. كيف تريد المتابعة؟';
+  }
 
   @override
   String get cleanupInProgress => 'التنظيف جارٍ...';

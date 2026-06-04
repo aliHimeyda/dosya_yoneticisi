@@ -40,10 +40,14 @@
   "delete": "Delete",
   "copy": "Copy",
   "cut": "Cut",
+  "cutReady": "Added to clipboard for moving",
   "save": "Save",
   "hide": "Hide",
   "share": "Share",
   "rename": "Rename",
+  "overwrite": "Overwrite",
+  "copyWithNewName": "Copy with new name",
+  "skip": "Skip",
   "passwordHint": "Enter password",
   "incorrectPassword": "Incorrect password",
   "ok": "OK",
@@ -56,6 +60,22 @@
   "renameSuccess": "Rename completed successfully",
   "savedSuccess": "Saved",
   "hiddenSuccess": "Hidden",
+  "pasteSuccess": "Paste completed successfully",
+  "invalidName": "Enter a valid name",
+  "itemAlreadyExists": "An item with the same name already exists",
+  "insufficientStorageSpace": "Not enough free space",
+  "operationDeleting": "Deleting items...",
+  "operationCopying": "Copying items...",
+  "operationMoving": "Moving items...",
+  "nameConflictTitle": "Name conflict",
+  "nameConflictMessage": "{name} already exists. How would you like to continue?",
+  "@nameConflictMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "cleanupInProgress": "Cleanup in progress...",
   "operationCompleted": "Operation completed",
   "temporaryFilesCollected": "Temporary files scanned",

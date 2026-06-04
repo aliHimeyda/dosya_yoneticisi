@@ -40,10 +40,14 @@
   "delete": "حذف",
   "copy": "نسخ",
   "cut": "قص",
+  "cutReady": "تمت الإضافة إلى الحافظة للنقل",
   "save": "حفظ",
   "hide": "إخفاء",
   "share": "مشاركة",
   "rename": "إعادة تسمية",
+  "overwrite": "استبدال",
+  "copyWithNewName": "النسخ باسم جديد",
+  "skip": "تخطي",
   "passwordHint": "أدخل كلمة المرور",
   "incorrectPassword": "كلمة المرور غير صحيحة",
   "ok": "موافق",
@@ -56,6 +60,22 @@
   "renameSuccess": "اكتملت إعادة التسمية بنجاح",
   "savedSuccess": "تم الحفظ",
   "hiddenSuccess": "تم الإخفاء",
+  "pasteSuccess": "اكتملت عملية اللصق بنجاح",
+  "invalidName": "أدخل اسماً صالحاً",
+  "itemAlreadyExists": "يوجد عنصر آخر بالاسم نفسه",
+  "insufficientStorageSpace": "لا توجد مساحة خالية كافية",
+  "operationDeleting": "جارٍ حذف العناصر...",
+  "operationCopying": "جارٍ نسخ العناصر...",
+  "operationMoving": "جارٍ نقل العناصر...",
+  "nameConflictTitle": "يوجد تعارض في الاسم",
+  "nameConflictMessage": "{name} موجود بالفعل. كيف تريد المتابعة؟",
+  "@nameConflictMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "cleanupInProgress": "التنظيف جارٍ...",
   "operationCompleted": "اكتملت العملية",
   "temporaryFilesCollected": "تم فحص الملفات المؤقتة",

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
 import 'package:dosya_gezgini/app/router/app_router.dart';
+import 'package:dosya_gezgini/data/services/thumbnail_cache_service.dart';
 import 'package:dosya_gezgini/features/files/presentation/models/folder_route_data.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/dosyaislemleri.dart';
@@ -17,7 +17,6 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as pathinfo;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
 class Klasor extends StatefulWidget {
   const Klasor({
@@ -36,8 +35,44 @@ class Klasor extends StatefulWidget {
 }
 
 class _KlasorState extends State<Klasor> with AutomaticKeepAliveClientMixin {
+  String? _countRequestPath;
+
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _ensureFolderCount();
+  }
+
+  @override
+  void didUpdateWidget(covariant Klasor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.klasor, widget.klasor)) {
+      final pathChanged = oldWidget.klasor.path != widget.klasor.path;
+      _countRequestPath = null;
+      _ensureFolderCount(force: pathChanged);
+    }
+  }
+
+  void _ensureFolderCount({bool force = false}) {
+    if (widget.klasor.isVirtual) {
+      return;
+    }
+
+    if (!force && _countRequestPath == widget.klasor.path) {
+      return;
+    }
+
+    _countRequestPath = widget.klasor.path;
+    unawaited(
+      context.read<Izinler>().ensureFolderCount(
+        widget.klasor,
+        refresh: force && widget.klasor.cachedTotalCount != null,
+      ),
+    );
+  }
 
   void _openFolder(BuildContext context) {
     final routeData = FolderRouteData.fromFolderNode(widget.klasor);
@@ -110,53 +145,62 @@ class _KlasorState extends State<Klasor> with AutomaticKeepAliveClientMixin {
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(10),
-                      child: Row(
-                        children: [
-                          if (isSelectionMode)
-                            _SelectionIndicator(
-                              isSelected: isSelected,
-                              activeColor: Theme.of(context).primaryColor,
-                              borderColor: Theme.of(context).iconTheme.color!,
-                              onTap: () => _toggleSelection(context),
-                            ),
-                          Image.asset(
-                            'assets/folder.png',
-                            width: 40,
-                            height: 40,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  pathinfo.basename(widget.path).length > 20
-                                      ? '${pathinfo.basename(widget.path).substring(0, 20)}...'
-                                      : pathinfo.basename(widget.path),
-                                  style: Theme.of(context).textTheme.bodyLarge,
+                      child: ListenableBuilder(
+                        listenable: widget.klasor,
+                        builder: (context, _) {
+                          final itemCountLabel = widget.klasor.itemCountLabel;
+
+                          return Row(
+                            children: [
+                              if (isSelectionMode)
+                                _SelectionIndicator(
+                                  isSelected: isSelected,
+                                  activeColor: Theme.of(context).primaryColor,
+                                  borderColor:
+                                      Theme.of(context).iconTheme.color!,
+                                  onTap: () => _toggleSelection(context),
                                 ),
-                                widget.klasor.olusumtarihi == null
-                                    ? Row(
-                                      children: [
-                                        Text('${widget.klasor.childCount} | '),
-                                        const AppSkeleton(
-                                          width: 72,
-                                          height: 12,
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(6),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                    : Text(
-                                      '${widget.klasor.childCount} | ${widget.klasor.formatlanmistarih}',
+                              Image.asset(
+                                'assets/folder.png',
+                                width: 40,
+                                height: 40,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      pathinfo.basename(widget.path).length > 20
+                                          ? '${pathinfo.basename(widget.path).substring(0, 20)}...'
+                                          : pathinfo.basename(widget.path),
+                                      style:
+                                          Theme.of(context).textTheme.bodyLarge,
                                     ),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.chevron_right),
-                        ],
+                                    widget.klasor.olusumtarihi == null
+                                        ? Row(
+                                          children: [
+                                            Text('$itemCountLabel | '),
+                                            const AppSkeleton(
+                                              width: 72,
+                                              height: 12,
+                                              borderRadius: BorderRadius.all(
+                                                Radius.circular(6),
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                        : Text(
+                                          '$itemCountLabel | ${widget.klasor.formatlanmistarih}',
+                                        ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -181,7 +225,6 @@ class Dosya extends StatefulWidget {
 
 class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
   static const double _previewSize = 40;
-  static final Map<String, Future<Uint8List?>> _videoThumbnailCache = {};
   static const Set<String> _imageExtensions = {
     '.png',
     '.jpg',
@@ -202,23 +245,40 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
   };
 
   late List<String> dosyabilgisi = [];
-  Future<Uint8List?>? _videoThumbnailFuture;
+  ThumbnailCacheService? _thumbnailCacheService;
+  ValueNotifier<String?>? _thumbnailPathListenable;
+  Timer? _deferredThumbnailTimer;
+  bool _thumbnailPrimeQueued = false;
 
   @override
   void initState() {
     super.initState();
     bilgileriaktar();
-    if (_isVideoFile) {
-      _videoThumbnailFuture = _videoThumbnailCache.putIfAbsent(
-        widget.file.path,
-        () => VideoThumbnail.thumbnailData(
-          video: widget.file.path,
-          imageFormat: ImageFormat.JPEG,
-          maxWidth: 128,
-          quality: 60,
-        ),
-      );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final service = context.read<ThumbnailCacheService>();
+    if (!identical(service, _thumbnailCacheService)) {
+      _thumbnailCacheService = service;
+      _bindThumbnailListenable();
     }
+
+    _scheduleThumbnailPrime();
+  }
+
+  @override
+  void didUpdateWidget(covariant Dosya oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.file.path == widget.file.path) {
+      return;
+    }
+
+    bilgileriaktar();
+    _deferredThumbnailTimer?.cancel();
+    _bindThumbnailListenable();
+    _scheduleThumbnailPrime();
   }
 
   void bilgileriaktar() async {
@@ -234,12 +294,87 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
   }
 
   @override
+  void dispose() {
+    _deferredThumbnailTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   bool get wantKeepAlive => true;
 
   String get _dosyaUzantisi =>
       pathinfo.extension(widget.file.path).toLowerCase();
   bool get _isImageFile => _imageExtensions.contains(_dosyaUzantisi);
   bool get _isVideoFile => _videoExtensions.contains(_dosyaUzantisi);
+  bool get _supportsThumbnail => _isImageFile || _isVideoFile;
+
+  void _bindThumbnailListenable() {
+    final service = _thumbnailCacheService;
+    if (service == null || !_supportsThumbnail) {
+      _thumbnailPathListenable = null;
+      return;
+    }
+
+    _thumbnailPathListenable = service.listenableFor(widget.file.path);
+  }
+
+  void _scheduleThumbnailPrime() {
+    if (!_supportsThumbnail ||
+        _thumbnailPrimeQueued ||
+        (_deferredThumbnailTimer?.isActive ?? false)) {
+      return;
+    }
+
+    final service = _thumbnailCacheService;
+    if (service != null) {
+      final thumbnailPath = service.currentThumbnailPath(widget.file.path);
+      if ((thumbnailPath?.isNotEmpty ?? false) ||
+          service.isPending(widget.file.path)) {
+        return;
+      }
+    }
+
+    _thumbnailPrimeQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _thumbnailPrimeQueued = false;
+      if (!mounted) {
+        return;
+      }
+
+      unawaited(_primeThumbnail());
+    });
+  }
+
+  Future<void> _primeThumbnail() async {
+    final service = _thumbnailCacheService;
+    if (service == null || !_supportsThumbnail) {
+      return;
+    }
+
+    final shouldDefer = Scrollable.recommendDeferredLoadingForContext(context);
+    await service.prime(widget.file, allowGeneration: !shouldDefer);
+    if (shouldDefer) {
+      _scheduleDeferredThumbnailRetry();
+      return;
+    }
+
+    _deferredThumbnailTimer?.cancel();
+  }
+
+  void _scheduleDeferredThumbnailRetry() {
+    if (_deferredThumbnailTimer?.isActive ?? false) {
+      return;
+    }
+
+    _deferredThumbnailTimer = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) {
+        return;
+      }
+
+      _deferredThumbnailTimer = null;
+      _scheduleThumbnailPrime();
+    });
+  }
 
   void _toggleSelection(BuildContext context) {
     context.read<Dosyaislemleri>().toggleFileSelection(widget.file);
@@ -349,82 +484,62 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
   }
 
   Widget _buildDosyaOnizleme(String dosyauzantisi) {
-    if (_isImageFile) {
-      return _buildResimOnizleme();
-    }
+    final thumbnailPathListenable = _thumbnailPathListenable;
+    if (_supportsThumbnail && thumbnailPathListenable != null) {
+      return ListenableBuilder(
+        listenable: thumbnailPathListenable,
+        builder: (context, _) {
+          final thumbnailPath = thumbnailPathListenable.value;
+          if (thumbnailPath == null || thumbnailPath.isEmpty) {
+            _scheduleThumbnailPrime();
+            return _buildVarsayilanIkon(dosyauzantisi);
+          }
 
-    if (_isVideoFile && _videoThumbnailFuture != null) {
-      return _buildVideoOnizleme();
+          return _buildThumbnailOnizleme(
+            thumbnailPath: thumbnailPath,
+            dosyauzantisi: dosyauzantisi,
+          );
+        },
+      );
     }
 
     return _buildVarsayilanIkon(dosyauzantisi);
   }
 
-  Widget _buildResimOnizleme() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: SizedBox(
-        width: _previewSize,
-        height: _previewSize,
-        child: Image.file(
-          widget.file,
-          fit: BoxFit.cover,
-          cacheWidth: 120,
-          cacheHeight: 120,
-          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-            if (wasSynchronouslyLoaded || frame != null) {
-              return child;
-            }
-            return _buildVarsayilanIkon(_dosyaUzantisi);
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return _buildVarsayilanIkon(_dosyaUzantisi);
-          },
+  Widget _buildThumbnailOnizleme({
+    required String thumbnailPath,
+    required String dosyauzantisi,
+  }) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            width: _previewSize,
+            height: _previewSize,
+            child: Image.file(
+              File(thumbnailPath),
+              fit: BoxFit.cover,
+              cacheWidth: 120,
+              cacheHeight: 120,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildVarsayilanIkon(dosyauzantisi);
+              },
+            ),
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildVideoOnizleme() {
-    return FutureBuilder<Uint8List?>(
-      future: _videoThumbnailFuture,
-      builder: (context, snapshot) {
-        final thumbnail = snapshot.data;
-        if (snapshot.connectionState != ConnectionState.done ||
-            thumbnail == null) {
-          return _buildVarsayilanIkon(_dosyaUzantisi);
-        }
-
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.memory(
-                thumbnail,
-                width: _previewSize,
-                height: _previewSize,
-                fit: BoxFit.cover,
-                cacheWidth: 120,
-                cacheHeight: 120,
-              ),
+        if (_isVideoFile)
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: Colors.black45,
+              borderRadius: BorderRadius.circular(18),
             ),
-            Container(
-              width: 18,
-              height: 18,
-              decoration: BoxDecoration(
-                color: Colors.black45,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Icon(
-                Icons.play_arrow,
-                color: Colors.white,
-                size: 12,
-              ),
-            ),
-          ],
-        );
-      },
+            child: const Icon(Icons.play_arrow, color: Colors.white, size: 12),
+          ),
+      ],
     );
   }
 

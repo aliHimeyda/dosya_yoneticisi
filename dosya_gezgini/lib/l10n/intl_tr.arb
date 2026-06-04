@@ -40,10 +40,14 @@
   "delete": "Sil",
   "copy": "Kopyala",
   "cut": "Kes",
+  "cutReady": "Taşımak için panoya alındı",
   "save": "Kaydet",
   "hide": "Sakla",
   "share": "Paylaş",
   "rename": "Adlandır",
+  "overwrite": "Üzerine yaz",
+  "copyWithNewName": "Yeni isimle kopyala",
+  "skip": "Atla",
   "passwordHint": "Şifreyi giriniz",
   "incorrectPassword": "Şifre hatalı",
   "ok": "Tamam",
@@ -56,6 +60,22 @@
   "renameSuccess": "Adlandırma işlemi başarılı",
   "savedSuccess": "Kaydedildi",
   "hiddenSuccess": "Saklandı",
+  "pasteSuccess": "Yapıştırma işlemi başarılı",
+  "invalidName": "Geçerli bir ad girin",
+  "itemAlreadyExists": "Aynı isimde bir öğe zaten var",
+  "insufficientStorageSpace": "Yeterli boş alan yok",
+  "operationDeleting": "Öğeler siliniyor...",
+  "operationCopying": "Öğeler kopyalanıyor...",
+  "operationMoving": "Öğeler taşınıyor...",
+  "nameConflictTitle": "Aynı isimde öğe var",
+  "nameConflictMessage": "{name} zaten mevcut. Nasıl devam edilsin?",
+  "@nameConflictMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "cleanupInProgress": "Temizlik devam ediyor...",
   "operationCompleted": "İşlem sonlandı",
   "temporaryFilesCollected": "Geçici dosyalar tarandı",

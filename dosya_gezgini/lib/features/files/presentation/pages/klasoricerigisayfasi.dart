@@ -187,16 +187,23 @@ class _KlasoricerigisayfasiState extends State<Klasoricerigisayfasi> {
       return;
     }
 
-    await _loadDirectoryFolder(targetFolder, loadId: loadId);
+    await _loadDirectoryFolder(
+      targetFolder,
+      loadId: loadId,
+      forceRefresh: forceRefresh,
+    );
   }
 
   Future<void> _loadDirectoryFolder(
     FolderNode targetFolder, {
     required int loadId,
+    required bool forceRefresh,
   }) async {
     if (!mounted) {
       return;
     }
+
+    final isRefreshingCurrentFolder = _folder?.path == targetFolder.path;
 
     setState(() {
       _folder = targetFolder;
@@ -206,8 +213,10 @@ class _KlasoricerigisayfasiState extends State<Klasoricerigisayfasi> {
       _hasMoreCategoryItems = false;
       _nextCategoryOffset = 0;
       _categoryProgressLabel = null;
-      _visibleDirectoryFolderCount = 0;
-      _visibleDirectoryFileCount = 0;
+      if (!isRefreshingCurrentFolder) {
+        _visibleDirectoryFolderCount = 0;
+        _visibleDirectoryFileCount = 0;
+      }
       _isDirectoryLoadingMore = false;
     });
 
@@ -215,6 +224,7 @@ class _KlasoricerigisayfasiState extends State<Klasoricerigisayfasi> {
 
     final result = await context.read<Izinler>().fileTree.loadFolder(
       targetFolder,
+      forceRefresh: forceRefresh,
       onProgress: (_) {
         if (!mounted || loadId != _activeLoadId) {
           return;
@@ -222,6 +232,7 @@ class _KlasoricerigisayfasiState extends State<Klasoricerigisayfasi> {
 
         setState(() {
           _folder = targetFolder;
+          _syncDirectoryVisibleCounts(targetFolder);
         });
       },
     );
@@ -234,18 +245,38 @@ class _KlasoricerigisayfasiState extends State<Klasoricerigisayfasi> {
       _folder = targetFolder;
       _isLoading = false;
       _loadError = result.error;
-      // Initialise first page for directory pagination.
-      int budget = _pageSize;
-      final fTake = math.min(budget, targetFolder.folderchildren.length);
-      budget -= fTake;
-      _visibleDirectoryFolderCount = fTake;
-      _visibleDirectoryFileCount = math.min(
-        budget,
-        targetFolder.filechildren.length,
-      );
+      _syncDirectoryVisibleCounts(targetFolder);
     });
 
     _syncVisibleFolder(targetFolder);
+  }
+
+  void _syncDirectoryVisibleCounts(FolderNode folder) {
+    if (folder.isVirtual) {
+      return;
+    }
+
+    final hasExistingWindow =
+        _visibleDirectoryFolderCount > 0 || _visibleDirectoryFileCount > 0;
+    if (hasExistingWindow) {
+      _visibleDirectoryFolderCount = math.min(
+        _visibleDirectoryFolderCount,
+        folder.folderchildren.length,
+      );
+      _visibleDirectoryFileCount = math.min(
+        _visibleDirectoryFileCount,
+        folder.filechildren.length,
+      );
+      if (_visibleDirectoryFolderCount > 0 || _visibleDirectoryFileCount > 0) {
+        return;
+      }
+    }
+
+    int budget = _pageSize;
+    final visibleFolders = math.min(budget, folder.folderchildren.length);
+    budget -= visibleFolders;
+    _visibleDirectoryFolderCount = visibleFolders;
+    _visibleDirectoryFileCount = math.min(budget, folder.filechildren.length);
   }
 
   Future<void> _loadCategoryFolder(
@@ -550,7 +581,7 @@ class _KlasoricerigisayfasiState extends State<Klasoricerigisayfasi> {
     return RefreshIndicator(
       color: Theme.of(context).primaryColor,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      onRefresh: () => _loadFolder(forceRefresh: folder.isVirtual),
+      onRefresh: () => _loadFolder(forceRefresh: true),
       child: ListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
@@ -606,7 +637,7 @@ class _KlasoricerigisayfasiState extends State<Klasoricerigisayfasi> {
     return RefreshIndicator(
       color: Theme.of(context).primaryColor,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      onRefresh: () => _loadFolder(forceRefresh: _folder?.isVirtual ?? false),
+      onRefresh: () => _loadFolder(forceRefresh: true),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [

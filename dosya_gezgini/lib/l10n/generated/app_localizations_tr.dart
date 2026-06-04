@@ -110,6 +110,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cut => 'Kes';
 
   @override
+  String get cutReady => 'Taşımak için panoya alındı';
+
+  @override
   String get save => 'Kaydet';
 
   @override
@@ -120,6 +123,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get rename => 'Adlandır';
+
+  @override
+  String get overwrite => 'Üzerine yaz';
+
+  @override
+  String get copyWithNewName => 'Yeni isimle kopyala';
+
+  @override
+  String get skip => 'Atla';
 
   @override
   String get passwordHint => 'Şifreyi giriniz';
@@ -156,6 +168,35 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get hiddenSuccess => 'Saklandı';
+
+  @override
+  String get pasteSuccess => 'Yapıştırma işlemi başarılı';
+
+  @override
+  String get invalidName => 'Geçerli bir ad girin';
+
+  @override
+  String get itemAlreadyExists => 'Aynı isimde bir öğe zaten var';
+
+  @override
+  String get insufficientStorageSpace => 'Yeterli boş alan yok';
+
+  @override
+  String get operationDeleting => 'Öğeler siliniyor...';
+
+  @override
+  String get operationCopying => 'Öğeler kopyalanıyor...';
+
+  @override
+  String get operationMoving => 'Öğeler taşınıyor...';
+
+  @override
+  String get nameConflictTitle => 'Aynı isimde öğe var';
+
+  @override
+  String nameConflictMessage(String name) {
+    return '$name zaten mevcut. Nasıl devam edilsin?';
+  }
 
   @override
   String get cleanupInProgress => 'Temizlik devam ediyor...';
