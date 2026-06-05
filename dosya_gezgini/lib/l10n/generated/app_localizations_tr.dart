@@ -216,6 +216,69 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get cleanupReady => 'Temizlik hazır';
+
+  @override
+  String get cleanupNothingToClean => 'Temizlenecek dosya bulunamadı';
+
+  @override
+  String get cleanupDeleting => 'Temizlik uygulanıyor...';
+
+  @override
+  String cleanupScannedFiles(int count) {
+    return 'Taranan dosya: $count';
+  }
+
+  @override
+  String cleanupCandidatesFound(int count) {
+    return 'Gereksiz dosya: $count';
+  }
+
+  @override
+  String cleanupRecoverableSpace(String size) {
+    return 'Geri kazanılabilir alan: $size';
+  }
+
+  @override
+  String get cleanupConfirmTitle => 'Temizliği başlat';
+
+  @override
+  String cleanupConfirmMessage(int count, String size) {
+    return '$count dosya silinecek ve $size alan boşalacak. Devam edilsin mi?';
+  }
+
+  @override
+  String cleanupDeletedCount(int count) {
+    return 'Silinen dosya: $count';
+  }
+
+  @override
+  String cleanupFailedCount(int count) {
+    return 'Hatalı dosya: $count';
+  }
+
+  @override
+  String get cleanupCurrentFile => 'İşlenen dosya';
+
+  @override
+  String get cleanupReportTitle => 'Temizlik raporu';
+
+  @override
+  String cleanupFreedSpace(String size) {
+    return 'Boşalan alan: $size';
+  }
+
+  @override
+  String cleanupScanIssues(int count) {
+    return 'Tarama hataları ($count)';
+  }
+
+  @override
+  String cleanupDeleteIssues(int count) {
+    return 'Silme hataları ($count)';
+  }
+
+  @override
   String get clean => 'Temizle';
 
   @override

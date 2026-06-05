@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
+import 'package:dosya_gezgini/data/models/cleaning_models.dart';
 import 'package:dosya_gezgini/data/models/file_operation_models.dart';
 import 'package:dosya_gezgini/data/models/hidden_item_model.dart';
 import 'package:dosya_gezgini/data/models/saved_item_model.dart';
 import 'package:dosya_gezgini/data/repositories/hidden_repository.dart';
 import 'package:dosya_gezgini/data/repositories/saved_repository.dart';
+import 'package:dosya_gezgini/data/services/cleaning_service.dart';
 import 'package:dosya_gezgini/data/services/file_index_service.dart';
 import 'package:dosya_gezgini/data/services/file_operation_service.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
@@ -16,7 +18,6 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:dosya_gezgini/l10n/generated/app_localizations.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -24,15 +25,18 @@ class Dosyaislemleri extends ChangeNotifier {
   Dosyaislemleri({
     required SavedRepository savedRepository,
     required HiddenRepository hiddenRepository,
+    required CleaningService cleaningService,
     required FileOperationService fileOperationService,
     required FileIndexService fileIndexService,
   }) : _savedRepository = savedRepository,
        _hiddenRepository = hiddenRepository,
+       _cleaningService = cleaningService,
        _fileOperationService = fileOperationService,
        _fileIndexService = fileIndexService;
 
   final SavedRepository _savedRepository;
   final HiddenRepository _hiddenRepository;
+  final CleaningService _cleaningService;
   final FileOperationService _fileOperationService;
   final FileIndexService _fileIndexService;
 
@@ -53,6 +57,13 @@ class Dosyaislemleri extends ChangeNotifier {
   FileOperationType? _activeOperationType;
   FileOperationProgress? _activeOperationProgress;
   String? _activeOperationTitle;
+  CleaningScanProgress? _cleanupScanProgress;
+  CleaningScanResult? _cleanupScanResult;
+  CleaningDeleteProgress? _cleanupDeleteProgress;
+  CleaningDeleteResult? _cleanupDeleteResult;
+  Object? _cleanupError;
+  bool _isCleanupScanning = false;
+  bool _isCleanupDeleting = false;
 
   bool get hasSelectedFiles => filelistesi.isNotEmpty;
   bool get hasClipboardContent =>
@@ -61,6 +72,22 @@ class Dosyaislemleri extends ChangeNotifier {
   FileOperationProgress? get activeOperationProgress =>
       _activeOperationProgress;
   String? get activeOperationTitle => _activeOperationTitle;
+  CleaningScanProgress? get cleanupScanProgress => _cleanupScanProgress;
+  CleaningScanResult? get cleanupScanResult => _cleanupScanResult;
+  CleaningDeleteProgress? get cleanupDeleteProgress => _cleanupDeleteProgress;
+  CleaningDeleteResult? get cleanupDeleteResult => _cleanupDeleteResult;
+  Object? get cleanupError => _cleanupError;
+  bool get isCleanupScanning => _isCleanupScanning;
+  bool get isCleanupDeleting => _isCleanupDeleting;
+  bool get hasCleanupCandidates =>
+      (_cleanupScanResult?.candidates.length ?? 0) > 0;
+  bool get hasCleanupResult => _cleanupDeleteResult != null;
+  int get cleanupCandidateCount => _cleanupScanResult?.candidates.length ?? 0;
+  int get cleanupCandidateBytes => _cleanupScanResult?.totalBytes ?? 0;
+  List<CleaningIssue> get cleanupIssues => <CleaningIssue>[
+    ...?_cleanupScanResult?.issues,
+    ...?_cleanupDeleteResult?.issues,
+  ];
 
   bool isFolderSelected(FolderNode folder) {
     return folderlistesi.any((item) => item.path == folder.path);
@@ -113,7 +140,136 @@ class Dosyaislemleri extends ChangeNotifier {
     return filelistesi;
   }
 
-  Future<void> temizlenecekleritoplamaislemi(BuildContext context) async {
+  Future<void> temizlenecekleritoplamaislemi([BuildContext? _]) async {
+    await startCleanupScan();
+  }
+
+  Future<void> gereksizdosyalaritemizle() async {
+    await startCleanupDelete();
+  }
+
+  Future<void> startCleanupScan() async {
+    if (_isCleanupScanning || _isCleanupDeleting) {
+      return;
+    }
+
+    _isCleanupScanning = true;
+    _cleanupError = null;
+    _cleanupScanProgress = null;
+    _cleanupScanResult = null;
+    _cleanupDeleteProgress = null;
+    _cleanupDeleteResult = null;
+    gereksizdosyalar.clear();
+    gereksizdosyalartoplamboyutu = 0;
+    loading = true;
+    aramaloading = false;
+    gecicidosyalaralinmasi = false;
+    onbellekdosyalarialinmasi = false;
+    notifyListeners();
+
+    try {
+      final result = await _cleaningService.scan(
+        onProgress: (progress) {
+          _cleanupScanProgress = progress;
+          loading = true;
+          gecicidosyalaralinmasi = progress.completedSourceCount >= 1;
+          onbellekdosyalarialinmasi = progress.completedSourceCount >= 2;
+          notifyListeners();
+        },
+      );
+
+      _cleanupScanResult = result;
+      _syncCleanupCandidates(result.candidates);
+      gecicidosyalaralinmasi = true;
+      onbellekdosyalarialinmasi = true;
+      aramaloading = result.hasCandidates;
+    } catch (error) {
+      _cleanupError = error;
+      aramaloading = false;
+    } finally {
+      loading = false;
+      _isCleanupScanning = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> startCleanupDelete() async {
+    if (_isCleanupScanning || _isCleanupDeleting) {
+      return;
+    }
+
+    final currentScanResult = _cleanupScanResult;
+    if (currentScanResult == null || currentScanResult.candidates.isEmpty) {
+      return;
+    }
+
+    _isCleanupDeleting = true;
+    _cleanupError = null;
+    _cleanupDeleteProgress = CleaningDeleteProgress(
+      processedItems: 0,
+      totalItems: currentScanResult.candidates.length,
+      deletedCount: 0,
+      failedCount: 0,
+      deletedBytes: 0,
+    );
+    loading = true;
+    notifyListeners();
+
+    try {
+      final result = await _cleaningService.deleteCandidates(
+        currentScanResult.candidates,
+        onProgress: (progress) {
+          _cleanupDeleteProgress = progress;
+          loading = true;
+          notifyListeners();
+        },
+      );
+
+      _cleanupDeleteResult = result;
+      final resolvedPaths = <String>{
+        ...result.deletedPaths,
+        ...result.issues
+            .where((issue) => issue.message == 'source_not_found')
+            .map((issue) => issue.path),
+      };
+      final remainingCandidates = currentScanResult.candidates
+          .where((candidate) => !resolvedPaths.contains(candidate.path))
+          .toList(growable: false);
+
+      _cleanupScanResult = CleaningScanResult(
+        candidates: remainingCandidates,
+        totalBytes: remainingCandidates.fold<int>(
+          0,
+          (sum, candidate) => sum + candidate.sizeBytes,
+        ),
+        processedFiles: currentScanResult.processedFiles,
+        issues: currentScanResult.issues,
+      );
+      _syncCleanupCandidates(remainingCandidates);
+      aramaloading = remainingCandidates.isNotEmpty;
+    } catch (error) {
+      _cleanupError = error;
+    } finally {
+      loading = false;
+      _isCleanupDeleting = false;
+      notifyListeners();
+    }
+  }
+
+  void _syncCleanupCandidates(List<CleaningCandidate> candidates) {
+    gereksizdosyalar
+      ..clear()
+      ..addAll(
+        candidates.map<FileSystemEntity>((candidate) => File(candidate.path)),
+      );
+    gereksizdosyalartoplamboyutu = candidates.fold<int>(
+      0,
+      (sum, candidate) => sum + candidate.sizeBytes,
+    );
+  }
+
+  /*
+  Future<void> legacyTemizlenecekleritoplamaislemi(BuildContext context) async {
     var silinecekboyut = 0;
     loading = true;
     notifyListeners();
@@ -185,6 +341,8 @@ class Dosyaislemleri extends ChangeNotifier {
     notifyListeners();
     await Future<void>.delayed(const Duration(seconds: 2));
   }
+
+  */
 
   Future<void> sil(BuildContext context) async {
     final entries = _selectedEntries;

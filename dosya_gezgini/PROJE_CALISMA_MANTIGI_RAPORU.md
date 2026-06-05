@@ -1611,6 +1611,36 @@ ilgili alt bölümler yeniden build olur.
 
 ## 12. Temizlik Sayfası Mantığı
 
+Task 15 sonrasında bu ekranın akışı tamamen yenilenmiştir.
+
+Güncel mimari:
+
+- `Temizliksayfasi.initState` açılışta artık `Dosyaislemleri.startCleanupScan()` çağırır
+- tarama ve silme işi UI içinde değil `lib/data/services/cleaning_service.dart`
+  içindeki `CleaningService` tarafında yürür
+- gereksiz dosya kriterleri merkezi sabitlerden gelir:
+  `CleaningConstants.staleFileAge`,
+  `CleaningConstants.largeFileThresholdBytes`,
+  `CleaningConstants.scanYieldEveryFiles`
+- temp ve cache dizinleri recursive stream ile parçalı taranır; her chunk sonunda
+  `CleaningScanProgress` emit edilerek UI donmadan ilerleme gösterilir
+- provider katmanı `cleanupScanProgress`, `cleanupScanResult`,
+  `cleanupDeleteProgress`, `cleanupDeleteResult` ve `cleanupIssues`
+  state'lerini açık eder
+- kullanıcı onayı olmadan silme başlatılmaz; `Temizliksayfasi` önce confirm dialog gösterir
+- silme sırasında determinate progress, silinen dosya sayısı, hata sayısı ve
+  işlenen son path gösterilir
+- silinen thumbnail cache dosyalarına ait metadata `ThumbnailCacheRepository`
+  üzerinden temizlenir
+- silme sonrasında `CleaningService` file index refresh tetikler; böylece silinen
+  path'ler arama/index cache'lerinden de düşer
+- tarama hataları ve silme hataları ekranda ayrı expansion card'larda listelenir
+- işlem sonunda `cleanupReportTitle` kartı silinen dosya sayısı, boşalan alan ve
+  hata özetini gösterir
+
+Task 15 ile eski `listSync + artificial delay + direkt delete` akışı kaldırılmış,
+cleanup ekranı gerçek progress ve raporlama üreten servis tabanlı yapıya geçirilmiştir.
+
 Dosya: `lib/features/files/presentation/pages/temizliksayfasi.dart`
 
 Bu ekran açılır açılmaz `initState` içinde:
@@ -1646,6 +1676,12 @@ Güncel akış:
 
 Bu işlem dosyayı fiziksel olarak taşımıyor; sadece kalıcı favori/kayıt referansı üretir.
 
+Ek not:
+
+- aynı path tekrar kaydedilirse Hive box key'i path olduğu için duplicate kayıt oluşmaz
+- `Kaydedilendosyalar` ekranı `PaginatedFileListView` ile 100'er item halinde render edilir
+- path artık mevcut değilse `Izinler.syncSavedEntries()` ilgili Hive kaydını otomatik temizler
+
 ### 13.2 Gizleme
 
 `Dosyaislemleri.sakla(...)` seçili öğeleri `HiddenRepository` içine yazar ve aktif
@@ -1660,6 +1696,12 @@ Ek davranış:
 
 Yani kullanıcı perspektifinde öğe bulunduğu yerden kaybolur, gizli listede görünür
 ve sonraki klasör yüklemelerinde de görünmez kalır.
+
+Ek not:
+
+- aynı path tekrar gizlenirse duplicate hidden kayıt oluşmaz; path box key olarak kullanılır
+- `Gizlidosyalar` ekranı da `PaginatedFileListView` ile 100'er item pagination kullanır
+- path artık yoksa `Izinler.syncHiddenEntries()` hidden repository kaydını temizler
 
 ### 13.3 Gizli dosyalar erişimi
 
@@ -1696,6 +1738,8 @@ Ancak güncel yapıda bu akış sadece memory listesine ekleme değildir:
 - recent kayıtları `RecentRepository` içinde Hive'a yazılır
 - uygulama açılışında repository okunup `fileTree.ensongezilen*` cache listeleri hydrate edilir
 - artık bulunmayan path'ler tespit edilirse recent kaydı da otomatik silinir
+- aynı path tekrar ziyaret edilirse duplicate entry oluşmaz; mevcut kayıt güncel timestamp ile overwrite edilir
+- repository tarafında recent listesi üst limit ile tutulur; güncel limit `PersistentCollectionLimits.recentItemsMaxCount = 500` değeridir
 
 Bu yüzden "recent" ekranı hâlâ kullanıcı etkileşimleriyle beslenir, ama veri kaynağı
 artık kalıcı repository katmanıdır.

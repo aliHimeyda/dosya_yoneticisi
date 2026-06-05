@@ -88,6 +88,87 @@
       }
     }
   },
+  "cleanupReady": "Cleanup ready",
+  "cleanupNothingToClean": "No files matched the cleanup rules",
+  "cleanupDeleting": "Applying cleanup...",
+  "cleanupScannedFiles": "Scanned files: {count}",
+  "@cleanupScannedFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupCandidatesFound": "Cleanup candidates: {count}",
+  "@cleanupCandidatesFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupRecoverableSpace": "Recoverable space: {size}",
+  "@cleanupRecoverableSpace": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cleanupConfirmTitle": "Start cleanup",
+  "cleanupConfirmMessage": "{count} files will be deleted and {size} will be freed. Continue?",
+  "@cleanupConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cleanupDeletedCount": "Deleted files: {count}",
+  "@cleanupDeletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupFailedCount": "Failed files: {count}",
+  "@cleanupFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupCurrentFile": "Current file",
+  "cleanupReportTitle": "Cleanup report",
+  "cleanupFreedSpace": "Freed space: {size}",
+  "@cleanupFreedSpace": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cleanupScanIssues": "Scan issues ({count})",
+  "@cleanupScanIssues": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupDeleteIssues": "Delete issues ({count})",
+  "@cleanupDeleteIssues": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "clean": "Clean",
   "categoryIndexPreparing": "Preparing {category} files...",
   "@categoryIndexPreparing": {

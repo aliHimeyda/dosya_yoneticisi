@@ -88,6 +88,87 @@
       }
     }
   },
+  "cleanupReady": "التنظيف جاهز",
+  "cleanupNothingToClean": "لم يتم العثور على ملفات للتنظيف",
+  "cleanupDeleting": "يجري تنفيذ التنظيف...",
+  "cleanupScannedFiles": "الملفات المفحوصة: {count}",
+  "@cleanupScannedFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupCandidatesFound": "ملفات التنظيف: {count}",
+  "@cleanupCandidatesFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupRecoverableSpace": "المساحة القابلة للاستعادة: {size}",
+  "@cleanupRecoverableSpace": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cleanupConfirmTitle": "ابدأ التنظيف",
+  "cleanupConfirmMessage": "سيتم حذف {count} ملف وتحرير {size}. هل تريد المتابعة؟",
+  "@cleanupConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cleanupDeletedCount": "الملفات المحذوفة: {count}",
+  "@cleanupDeletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupFailedCount": "الملفات الفاشلة: {count}",
+  "@cleanupFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupCurrentFile": "الملف الحالي",
+  "cleanupReportTitle": "تقرير التنظيف",
+  "cleanupFreedSpace": "المساحة المحررة: {size}",
+  "@cleanupFreedSpace": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cleanupScanIssues": "مشكلات الفحص ({count})",
+  "@cleanupScanIssues": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupDeleteIssues": "مشكلات الحذف ({count})",
+  "@cleanupDeleteIssues": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "clean": "تنظيف",
   "categoryIndexPreparing": "جارٍ إعداد ملفات {category}...",
   "@categoryIndexPreparing": {

@@ -11,6 +11,7 @@ import 'package:dosya_gezgini/data/repositories/saved_repository.dart';
 import 'package:dosya_gezgini/data/repositories/search_repository.dart';
 import 'package:dosya_gezgini/data/repositories/thumbnail_cache_repository.dart';
 import 'package:dosya_gezgini/data/services/category_query_service.dart';
+import 'package:dosya_gezgini/data/services/cleaning_service.dart';
 import 'package:dosya_gezgini/data/services/file_index_service.dart';
 import 'package:dosya_gezgini/data/services/file_operation_service.dart';
 import 'package:dosya_gezgini/data/services/file_system_service.dart';
@@ -47,6 +48,10 @@ Future<void> bootstrap() async {
     fileSystemService: fileSystemService,
   );
   final fileOperationService = FileOperationService();
+  final cleaningService = CleaningService(
+    fileIndexService: fileIndexService,
+    thumbnailCacheRepository: thumbnailCacheRepository,
+  );
   final categoryRepository = CategoryRepository(
     fileIndexService: fileIndexService,
     categoryQueryService: CategoryQueryService(fileIndexRepository),
@@ -72,6 +77,7 @@ Future<void> bootstrap() async {
       recentRepository: recentRepository,
       savedRepository: savedRepository,
       hiddenRepository: hiddenRepository,
+      cleaningService: cleaningService,
       fileOperationService: fileOperationService,
       thumbnailCacheRepository: thumbnailCacheRepository,
       thumbnailCacheService: thumbnailCacheService,
@@ -90,6 +96,7 @@ Widget buildApp({
   required RecentRepository recentRepository,
   required SavedRepository savedRepository,
   required HiddenRepository hiddenRepository,
+  required CleaningService cleaningService,
   required FileOperationService fileOperationService,
   required ThumbnailCacheRepository thumbnailCacheRepository,
   required ThumbnailCacheService thumbnailCacheService,
@@ -106,6 +113,7 @@ Widget buildApp({
       Provider<RecentRepository>.value(value: recentRepository),
       Provider<SavedRepository>.value(value: savedRepository),
       Provider<HiddenRepository>.value(value: hiddenRepository),
+      Provider<CleaningService>.value(value: cleaningService),
       Provider<FileOperationService>.value(value: fileOperationService),
       Provider<ThumbnailCacheRepository>.value(value: thumbnailCacheRepository),
       Provider<ThumbnailCacheService>.value(value: thumbnailCacheService),
@@ -121,6 +129,7 @@ Widget buildApp({
             (_) => Dosyaislemleri(
               savedRepository: savedRepository,
               hiddenRepository: hiddenRepository,
+              cleaningService: cleaningService,
               fileOperationService: fileOperationService,
               fileIndexService: fileIndexService,
             ),

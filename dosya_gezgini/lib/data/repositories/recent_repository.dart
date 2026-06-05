@@ -1,9 +1,13 @@
 import 'package:dosya_gezgini/data/constants/hive_box_names.dart';
+import 'package:dosya_gezgini/data/constants/persistent_collection_limits.dart';
 import 'package:dosya_gezgini/data/models/recent_item_model.dart';
 import 'package:dosya_gezgini/data/services/hive_service.dart';
 
 class RecentRepository {
-  RecentRepository(this._hiveService, {this.maxItems = 100});
+  RecentRepository(
+    this._hiveService, {
+    this.maxItems = PersistentCollectionLimits.recentItemsMaxCount,
+  });
 
   final HiveService _hiveService;
   final int maxItems;

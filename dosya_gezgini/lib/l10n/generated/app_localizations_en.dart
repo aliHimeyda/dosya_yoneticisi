@@ -216,6 +216,69 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get cleanupReady => 'Cleanup ready';
+
+  @override
+  String get cleanupNothingToClean => 'No files matched the cleanup rules';
+
+  @override
+  String get cleanupDeleting => 'Applying cleanup...';
+
+  @override
+  String cleanupScannedFiles(int count) {
+    return 'Scanned files: $count';
+  }
+
+  @override
+  String cleanupCandidatesFound(int count) {
+    return 'Cleanup candidates: $count';
+  }
+
+  @override
+  String cleanupRecoverableSpace(String size) {
+    return 'Recoverable space: $size';
+  }
+
+  @override
+  String get cleanupConfirmTitle => 'Start cleanup';
+
+  @override
+  String cleanupConfirmMessage(int count, String size) {
+    return '$count files will be deleted and $size will be freed. Continue?';
+  }
+
+  @override
+  String cleanupDeletedCount(int count) {
+    return 'Deleted files: $count';
+  }
+
+  @override
+  String cleanupFailedCount(int count) {
+    return 'Failed files: $count';
+  }
+
+  @override
+  String get cleanupCurrentFile => 'Current file';
+
+  @override
+  String get cleanupReportTitle => 'Cleanup report';
+
+  @override
+  String cleanupFreedSpace(String size) {
+    return 'Freed space: $size';
+  }
+
+  @override
+  String cleanupScanIssues(int count) {
+    return 'Scan issues ($count)';
+  }
+
+  @override
+  String cleanupDeleteIssues(int count) {
+    return 'Delete issues ($count)';
+  }
+
+  @override
   String get clean => 'Clean';
 
   @override

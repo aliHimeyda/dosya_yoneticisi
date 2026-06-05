@@ -26,6 +26,16 @@ class ThumbnailCacheRepository {
     await box.put(item.sourcePath, item.toMap());
   }
 
+  Future<List<ThumbnailCacheModel>> readAll() async {
+    final box = await _hiveService.openMapBox(
+      HiveBoxNames.thumbnailCacheMetadata,
+    );
+    return box.values
+        .map(ThumbnailCacheModel.fromMap)
+        .where((item) => item.sourcePath.isNotEmpty)
+        .toList(growable: false);
+  }
+
   Future<void> removePaths(Iterable<String> sourcePaths) async {
     final uniquePaths = sourcePaths.toSet();
     if (uniquePaths.isEmpty) {

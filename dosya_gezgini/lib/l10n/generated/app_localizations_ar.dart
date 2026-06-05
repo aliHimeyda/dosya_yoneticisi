@@ -216,6 +216,69 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get cleanupReady => 'التنظيف جاهز';
+
+  @override
+  String get cleanupNothingToClean => 'لم يتم العثور على ملفات للتنظيف';
+
+  @override
+  String get cleanupDeleting => 'يجري تنفيذ التنظيف...';
+
+  @override
+  String cleanupScannedFiles(int count) {
+    return 'الملفات المفحوصة: $count';
+  }
+
+  @override
+  String cleanupCandidatesFound(int count) {
+    return 'ملفات التنظيف: $count';
+  }
+
+  @override
+  String cleanupRecoverableSpace(String size) {
+    return 'المساحة القابلة للاستعادة: $size';
+  }
+
+  @override
+  String get cleanupConfirmTitle => 'ابدأ التنظيف';
+
+  @override
+  String cleanupConfirmMessage(int count, String size) {
+    return 'سيتم حذف $count ملف وتحرير $size. هل تريد المتابعة؟';
+  }
+
+  @override
+  String cleanupDeletedCount(int count) {
+    return 'الملفات المحذوفة: $count';
+  }
+
+  @override
+  String cleanupFailedCount(int count) {
+    return 'الملفات الفاشلة: $count';
+  }
+
+  @override
+  String get cleanupCurrentFile => 'الملف الحالي';
+
+  @override
+  String get cleanupReportTitle => 'تقرير التنظيف';
+
+  @override
+  String cleanupFreedSpace(String size) {
+    return 'المساحة المحررة: $size';
+  }
+
+  @override
+  String cleanupScanIssues(int count) {
+    return 'مشكلات الفحص ($count)';
+  }
+
+  @override
+  String cleanupDeleteIssues(int count) {
+    return 'مشكلات الحذف ($count)';
+  }
+
+  @override
   String get clean => 'تنظيف';
 
   @override

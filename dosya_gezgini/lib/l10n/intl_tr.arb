@@ -88,6 +88,87 @@
       }
     }
   },
+  "cleanupReady": "Temizlik hazır",
+  "cleanupNothingToClean": "Temizlenecek dosya bulunamadı",
+  "cleanupDeleting": "Temizlik uygulanıyor...",
+  "cleanupScannedFiles": "Taranan dosya: {count}",
+  "@cleanupScannedFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupCandidatesFound": "Gereksiz dosya: {count}",
+  "@cleanupCandidatesFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupRecoverableSpace": "Geri kazanılabilir alan: {size}",
+  "@cleanupRecoverableSpace": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cleanupConfirmTitle": "Temizliği başlat",
+  "cleanupConfirmMessage": "{count} dosya silinecek ve {size} alan boşalacak. Devam edilsin mi?",
+  "@cleanupConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cleanupDeletedCount": "Silinen dosya: {count}",
+  "@cleanupDeletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupFailedCount": "Hatalı dosya: {count}",
+  "@cleanupFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupCurrentFile": "İşlenen dosya",
+  "cleanupReportTitle": "Temizlik raporu",
+  "cleanupFreedSpace": "Boşalan alan: {size}",
+  "@cleanupFreedSpace": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cleanupScanIssues": "Tarama hataları ({count})",
+  "@cleanupScanIssues": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupDeleteIssues": "Silme hataları ({count})",
+  "@cleanupDeleteIssues": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "clean": "Temizle",
   "categoryIndexPreparing": "{category} dosyaları hazırlanıyor...",
   "@categoryIndexPreparing": {

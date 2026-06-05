@@ -502,6 +502,96 @@ abstract class AppLocalizations {
   /// **'{size} MB will be freed'**
   String cleanupWillFree(String size);
 
+  /// No description provided for @cleanupReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup ready'**
+  String get cleanupReady;
+
+  /// No description provided for @cleanupNothingToClean.
+  ///
+  /// In en, this message translates to:
+  /// **'No files matched the cleanup rules'**
+  String get cleanupNothingToClean;
+
+  /// No description provided for @cleanupDeleting.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying cleanup...'**
+  String get cleanupDeleting;
+
+  /// No description provided for @cleanupScannedFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned files: {count}'**
+  String cleanupScannedFiles(int count);
+
+  /// No description provided for @cleanupCandidatesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup candidates: {count}'**
+  String cleanupCandidatesFound(int count);
+
+  /// No description provided for @cleanupRecoverableSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Recoverable space: {size}'**
+  String cleanupRecoverableSpace(String size);
+
+  /// No description provided for @cleanupConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start cleanup'**
+  String get cleanupConfirmTitle;
+
+  /// No description provided for @cleanupConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} files will be deleted and {size} will be freed. Continue?'**
+  String cleanupConfirmMessage(int count, String size);
+
+  /// No description provided for @cleanupDeletedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted files: {count}'**
+  String cleanupDeletedCount(int count);
+
+  /// No description provided for @cleanupFailedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed files: {count}'**
+  String cleanupFailedCount(int count);
+
+  /// No description provided for @cleanupCurrentFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Current file'**
+  String get cleanupCurrentFile;
+
+  /// No description provided for @cleanupReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup report'**
+  String get cleanupReportTitle;
+
+  /// No description provided for @cleanupFreedSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Freed space: {size}'**
+  String cleanupFreedSpace(String size);
+
+  /// No description provided for @cleanupScanIssues.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan issues ({count})'**
+  String cleanupScanIssues(int count);
+
+  /// No description provided for @cleanupDeleteIssues.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete issues ({count})'**
+  String cleanupDeleteIssues(int count);
+
   /// No description provided for @clean.
   ///
   /// In en, this message translates to:
