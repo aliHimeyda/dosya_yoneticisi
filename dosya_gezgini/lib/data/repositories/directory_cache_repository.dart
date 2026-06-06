@@ -17,6 +17,16 @@ class DirectoryCacheRepository {
     return DirectoryCacheModel.fromMap(rawValue);
   }
 
+  Future<List<DirectoryCacheModel>> readAll() async {
+    final box = await _hiveService.openMapBox(HiveBoxNames.directoryCache);
+    final items = box.values
+        .whereType<Map<dynamic, dynamic>>()
+        .map(DirectoryCacheModel.fromMap)
+        .toList(growable: false)
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return List<DirectoryCacheModel>.unmodifiable(items);
+  }
+
   Future<void> upsert(DirectoryCacheModel item) async {
     final box = await _hiveService.openMapBox(HiveBoxNames.directoryCache);
     await box.put(item.path, item.toMap());

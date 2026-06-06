@@ -1,3 +1,4 @@
+import 'package:dosya_gezgini/core/localization/file_sync_messages.dart';
 import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/dosyaislemleri.dart';
@@ -12,7 +13,19 @@ class Kaydedilendosyalar extends StatelessWidget {
   const Kaydedilendosyalar({super.key});
 
   Future<void> _refreshEntries(BuildContext context) async {
-    await context.read<Izinler>().refreshSavedEntries();
+    final result = await context.read<Izinler>().refreshSavedEntries();
+    if (!context.mounted) {
+      return;
+    }
+
+    final message = buildFileSyncNoticeMessage(context.l10n, result);
+    if (message == null) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _clearSelectionMode(BuildContext context) {
@@ -47,13 +60,15 @@ class Kaydedilendosyalar extends StatelessWidget {
     return Selector<Altislemprovider, bool>(
       selector: (_, altIslemProvider) => altIslemProvider.anahtar,
       builder: (context, isSelectionMode, child) {
-        return PopScope(
-          canPop: !isSelectionMode,
-          onPopInvokedWithResult: (didPop, result) {
-            if (didPop) {
-              return;
-            }
+        if (!isSelectionMode) {
+          return child!;
+        }
+
+        // ignore: deprecated_member_use
+        return WillPopScope(
+          onWillPop: () async {
             _clearSelectionMode(context);
+            return false;
           },
           child: child!,
         );

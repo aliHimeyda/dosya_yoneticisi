@@ -8,6 +8,21 @@
   "privateFiles": "Özel Dosyalar",
   "savedFiles": "Kaydedilen Dosyalar",
   "errorOccurred": "Bir hata oluştu",
+  "fileAccessUnavailable": "Bu öğeye şu anda erişilemiyor.",
+  "fileAccessInvalidPath": "Yol bozuk veya geçersiz.",
+  "fileAccessDeleted": "Öğe artık bulunamıyor.",
+  "fileAccessExpectedDirectory": "Bu yol geçerli bir klasör değil.",
+  "fileAccessReadDenied": "Bu klasör okunamıyor.",
+  "fileAccessPermissionDenied": "Bu yola erişim reddedildi.",
+  "fileAccessSymbolicLinkUnsupported": "Symbolic link yolları desteklenmiyor.",
+  "fileSyncItemsMissing": "{count} kayıt artık bulunamadı ve listelerden temizlendi.",
+  "@fileSyncItemsMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tryAgain": "Tekrar Dene",
   "recentlyVisited": "En Son Gezilenler",
   "noOpenedFolder": "Henüz açılmış klasör yok.",
@@ -61,12 +76,25 @@
   "savedSuccess": "Kaydedildi",
   "hiddenSuccess": "Saklandı",
   "pasteSuccess": "Yapıştırma işlemi başarılı",
+  "targetFolderNotFound": "Hedef klasör artık bulunamıyor.",
+  "destinationInsideSource": "Bir klasör kendi içine taşınamaz veya kopyalanamaz.",
+  "operationRolledBack": "İşlem tamamlanamadı, yapılan değişiklikler geri alındı.",
+  "operationRollbackFailed": "İşlem başarısız oldu ve geri alma tamamlanamadı.",
   "invalidName": "Geçerli bir ad girin",
   "itemAlreadyExists": "Aynı isimde bir öğe zaten var",
   "insufficientStorageSpace": "Yeterli boş alan yok",
   "operationDeleting": "Öğeler siliniyor...",
   "operationCopying": "Öğeler kopyalanıyor...",
   "operationMoving": "Öğeler taşınıyor...",
+  "operationDeletingProgress": "Silme işlemi devam ediyor",
+  "operationCopyingProgress": "Kopyalama işlemi devam ediyor",
+  "operationMovingProgress": "Taşıma işlemi devam ediyor",
+  "operationCreatingFolderProgress": "Klasör oluşturma işlemi devam ediyor",
+  "operationRenamingProgress": "Yeniden adlandırma işlemi devam ediyor",
+  "operationSyncingRecordsProgress": "Kayıtlar senkronize ediliyor",
+  "operationRefreshingRootProgress": "Klasör listesi yenileniyor",
+  "operationRefreshingFolderProgress": "Klasör içeriği yenileniyor",
+  "operationRefreshingIndexProgress": "Arama ve kategori dizini yenileniyor",
   "nameConflictTitle": "Aynı isimde öğe var",
   "nameConflictMessage": "{name} zaten mevcut. Nasıl devam edilsin?",
   "@nameConflictMessage": {

@@ -6,6 +6,7 @@ import 'package:dosya_gezgini/data/constants/cleaning_constants.dart';
 import 'package:dosya_gezgini/data/models/cleaning_models.dart';
 import 'package:dosya_gezgini/data/repositories/thumbnail_cache_repository.dart';
 import 'package:dosya_gezgini/data/services/file_index_service.dart';
+import 'package:dosya_gezgini/data/services/file_metadata_service.dart';
 import 'package:path_provider/path_provider.dart';
 
 typedef CleaningScanProgressCallback =
@@ -16,11 +17,14 @@ typedef CleaningDeleteProgressCallback =
 class CleaningService {
   CleaningService({
     required FileIndexService fileIndexService,
+    required FileMetadataService fileMetadataService,
     required ThumbnailCacheRepository thumbnailCacheRepository,
   }) : _fileIndexService = fileIndexService,
+       _fileMetadataService = fileMetadataService,
        _thumbnailCacheRepository = thumbnailCacheRepository;
 
   final FileIndexService _fileIndexService;
+  final FileMetadataService _fileMetadataService;
   final ThumbnailCacheRepository _thumbnailCacheRepository;
 
   Future<CleaningScanResult> scan({
@@ -180,6 +184,7 @@ class CleaningService {
     }
 
     await _purgeThumbnailMetadata(deletedPaths);
+    await _fileMetadataService.deleteMetadataForPaths(deletedPaths);
     if (deletedPaths.isNotEmpty) {
       unawaited(_fileIndexService.refreshIndex(rootPath: storageRootPath));
     }

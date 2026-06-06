@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
+import 'package:dosya_gezgini/data/models/file_metadata_model.dart';
 import 'package:dosya_gezgini/data/models/indexed_file_model.dart';
 import 'package:dosya_gezgini/features/files/presentation/widgets/dosya_folder.dart';
 import 'package:dosya_gezgini/features/files/state/folderleragaci.dart';
+import 'package:dosya_gezgini/features/search/state/arama_provider.dart';
 import 'package:dosya_gezgini/features/search/state/search_controller.dart'
     as search_state;
 import 'package:dosya_gezgini/shared/widgets/empty_state_widget.dart';
@@ -13,52 +15,29 @@ import 'package:dosya_gezgini/shared/widgets/folder_list_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class Arama extends StatefulWidget {
+class Arama extends StatelessWidget {
   const Arama({super.key});
 
   @override
-  State<Arama> createState() => _AramaState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<AramaProvider>(
+      create:
+          (context) => AramaProvider(
+            searchController: context.read<search_state.SearchController>(),
+          ),
+      child: const _AramaView(),
+    );
+  }
 }
 
-class _AramaState extends State<Arama> {
-  final TextEditingController _controller = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    final searchController = context.read<search_state.SearchController>();
-    _controller.text = searchController.typedQuery;
-    _scrollController.addListener(_handleScroll);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    _scrollController
-      ..removeListener(_handleScroll)
-      ..dispose();
-    super.dispose();
-  }
-
-  void _handleScroll() {
-    if (!_scrollController.hasClients) {
-      return;
-    }
-
-    if (_scrollController.position.extentAfter > 320) {
-      return;
-    }
-
-    context.read<search_state.SearchController>().loadMore();
-  }
+class _AramaView extends StatelessWidget {
+  const _AramaView();
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final searchController = context.watch<search_state.SearchController>();
+    final provider = context.read<AramaProvider>();
 
     return Column(
       children: [
@@ -67,23 +46,14 @@ class _AramaState extends State<Arama> {
           child: SizedBox(
             height: 40,
             child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              onChanged:
-                  context.read<search_state.SearchController>().updateQuery,
-              onSubmitted: (_) {
-                context
-                    .read<search_state.SearchController>()
-                    .submitCurrentQuery();
-              },
+              controller: provider.textController,
+              focusNode: provider.focusNode,
+              onChanged: provider.updateQuery,
+              onSubmitted: (_) => provider.submitCurrentQuery(),
               decoration: InputDecoration(
                 prefixIcon: IconButton(
                   icon: const Icon(Icons.search, size: 18),
-                  onPressed: () {
-                    context
-                        .read<search_state.SearchController>()
-                        .submitCurrentQuery();
-                  },
+                  onPressed: provider.submitCurrentQuery,
                 ),
                 hintText: l10n.searchHint,
                 focusColor: Theme.of(context).primaryColor,
@@ -158,12 +128,12 @@ class _AramaState extends State<Arama> {
     final loadingPlaceholders = searchController.isLoadingMore ? 3 : 0;
     final footerErrorCount = showFooterError ? 1 : 0;
 
-    return RefreshIndicator(
+      return RefreshIndicator(
       color: Theme.of(context).primaryColor,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      onRefresh: searchController.refresh,
+      onRefresh: context.read<AramaProvider>().refresh,
       child: ListView.builder(
-        controller: _scrollController,
+        controller: context.read<AramaProvider>().scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: results.length + loadingPlaceholders + footerErrorCount,
         itemBuilder: (context, index) {
@@ -176,11 +146,11 @@ class _AramaState extends State<Arama> {
             return const FileItemSkeleton();
           }
 
-          return Padding(
+            return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: ErrorStateWidget(
               message: l10n.errorOccurred,
-              onRetry: searchController.loadMore,
+              onRetry: context.read<AramaProvider>().loadMore,
               retryLabel: l10n.tryAgain,
             ),
           );
@@ -200,7 +170,11 @@ class _AramaState extends State<Arama> {
       );
     }
 
-    return Dosya(key: ValueKey(item.path), file: File(item.path));
+    return Dosya(
+      key: ValueKey(item.path),
+      file: File(item.path),
+      initialMetadata: FileMetadataModel.fromIndexedFile(item),
+    );
   }
 
   Widget _buildCenteredState(BuildContext context, Widget child) {
@@ -217,7 +191,7 @@ class _AramaState extends State<Arama> {
     return RefreshIndicator(
       color: Theme.of(context).primaryColor,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      onRefresh: context.read<search_state.SearchController>().refresh,
+      onRefresh: context.read<AramaProvider>().refresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [

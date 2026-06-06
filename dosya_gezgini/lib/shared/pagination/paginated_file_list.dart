@@ -46,6 +46,7 @@ class _PaginatedFileListViewState extends State<PaginatedFileListView> {
     _ctrl.setData(widget.folders, widget.files);
     _scrollController.addListener(_handleScroll);
     _primeVisibleFolderCounts(refresh: false);
+    _primeVisibleFileMetadata(refresh: false);
   }
 
   @override
@@ -58,6 +59,7 @@ class _PaginatedFileListViewState extends State<PaginatedFileListView> {
         _isLoadingMore = false;
       });
       _primeVisibleFolderCounts(refresh: true);
+      _primeVisibleFileMetadata(refresh: true);
     }
   }
 
@@ -88,6 +90,7 @@ class _PaginatedFileListViewState extends State<PaginatedFileListView> {
         _isLoadingMore = false;
       });
       _primeVisibleFolderCounts(refresh: false);
+      _primeVisibleFileMetadata(refresh: false);
     });
   }
 
@@ -95,6 +98,15 @@ class _PaginatedFileListViewState extends State<PaginatedFileListView> {
     unawaited(
       context.read<Izinler>().primeFolderCounts(
         _ctrl.visibleFolders,
+        refresh: refresh,
+      ),
+    );
+  }
+
+  void _primeVisibleFileMetadata({required bool refresh}) {
+    unawaited(
+      context.read<Izinler>().primeFileMetadata(
+        _ctrl.visibleFiles,
         refresh: refresh,
       ),
     );

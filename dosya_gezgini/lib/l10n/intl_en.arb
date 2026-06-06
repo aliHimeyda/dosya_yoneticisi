@@ -8,6 +8,21 @@
   "privateFiles": "Private Files",
   "savedFiles": "Saved Files",
   "errorOccurred": "Something went wrong",
+  "fileAccessUnavailable": "This item is not accessible right now.",
+  "fileAccessInvalidPath": "The path is invalid or corrupted.",
+  "fileAccessDeleted": "The item can no longer be found.",
+  "fileAccessExpectedDirectory": "This path is not a valid folder.",
+  "fileAccessReadDenied": "This folder cannot be read.",
+  "fileAccessPermissionDenied": "Access to this path was denied.",
+  "fileAccessSymbolicLinkUnsupported": "Symbolic link paths are not supported.",
+  "fileSyncItemsMissing": "{count} tracked items could not be found and were removed from the lists.",
+  "@fileSyncItemsMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tryAgain": "Try Again",
   "recentlyVisited": "Recently Visited",
   "noOpenedFolder": "No opened folder yet.",
@@ -61,12 +76,25 @@
   "savedSuccess": "Saved",
   "hiddenSuccess": "Hidden",
   "pasteSuccess": "Paste completed successfully",
+  "targetFolderNotFound": "The destination folder can no longer be found.",
+  "destinationInsideSource": "A folder cannot be copied or moved into itself.",
+  "operationRolledBack": "The operation could not be completed and all changes were rolled back.",
+  "operationRollbackFailed": "The operation failed and rollback could not be completed.",
   "invalidName": "Enter a valid name",
   "itemAlreadyExists": "An item with the same name already exists",
   "insufficientStorageSpace": "Not enough free space",
   "operationDeleting": "Deleting items...",
   "operationCopying": "Copying items...",
   "operationMoving": "Moving items...",
+  "operationDeletingProgress": "Delete operation in progress",
+  "operationCopyingProgress": "Copy operation in progress",
+  "operationMovingProgress": "Move operation in progress",
+  "operationCreatingFolderProgress": "Folder creation in progress",
+  "operationRenamingProgress": "Rename operation in progress",
+  "operationSyncingRecordsProgress": "Synchronizing records",
+  "operationRefreshingRootProgress": "Refreshing folder list",
+  "operationRefreshingFolderProgress": "Refreshing folder content",
+  "operationRefreshingIndexProgress": "Refreshing search and category index",
   "nameConflictTitle": "Name conflict",
   "nameConflictMessage": "{name} already exists. How would you like to continue?",
   "@nameConflictMessage": {

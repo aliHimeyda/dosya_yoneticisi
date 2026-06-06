@@ -1,64 +1,34 @@
-import 'package:battery_plus/battery_plus.dart';
-import 'package:dosya_gezgini/app/router/app_router.dart';
 import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
 import 'package:dosya_gezgini/core/localization/locale_provider.dart';
 import 'package:dosya_gezgini/core/theme/app_theme.dart';
 import 'package:dosya_gezgini/features/menu/state/localestoragebilgileri.dart';
+import 'package:dosya_gezgini/features/menu/state/menu_provider.dart';
 import 'package:dosya_gezgini/shared/widgets/app_skeleton.dart';
 import 'package:dosya_gezgini/shared/widgets/storage_card_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-class Pil {
-  static final Battery pil = Battery();
-}
-
-class Menu extends StatefulWidget {
+class Menu extends StatelessWidget {
   const Menu({super.key});
 
   @override
-  State<Menu> createState() => _MenuState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<MenuProvider>(
+      create: (_) => MenuProvider(),
+      child: const _MenuView(),
+    );
+  }
 }
 
-class _MenuState extends State<Menu> {
-  final TextEditingController _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Stream<String> zamanigetir() async* {
-    while (true) {
-      await Future.delayed(const Duration(seconds: 1));
-      yield DateFormat('HH:mm:ss').format(DateTime.now());
-    }
-  }
-
-  Stream<String> depolamaalanigetir() async* {
-    while (true) {
-      await Future.delayed(const Duration(seconds: 1));
-      yield Battery().batteryLevel.toString();
-    }
-  }
-
-  Stream<int> pildurumugetir() async* {
-    while (true) {
-      await Future.delayed(const Duration(seconds: 1));
-      final pildurumu = await Pil.pil.batteryLevel;
-      yield pildurumu;
-    }
-  }
+class _MenuView extends StatelessWidget {
+  const _MenuView();
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final appTheme = Theme.of(context);
+    final menuProvider = context.read<MenuProvider>();
     return Center(
       child: Column(
         children: [
@@ -100,7 +70,12 @@ class _MenuState extends State<Menu> {
                 padding: const EdgeInsets.all(10),
                 child: Row(
                   children: [
-                    Icon(context.watch<AppTheme>().temaiconu, size: 30),
+                    Selector<AppTheme, IconData>(
+                      selector: (_, appThemeProvider) => appThemeProvider.temaiconu,
+                      builder: (context, themeIcon, _) {
+                        return Icon(themeIcon, size: 30);
+                      },
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -114,36 +89,58 @@ class _MenuState extends State<Menu> {
                         ],
                       ),
                     ),
-                    Switch(
-                      value: context.watch<AppTheme>().isdarkmode,
-                      onChanged: (value) {
-                        context.read<AppTheme>().changetheme();
+                    Selector<AppTheme, bool>(
+                      selector:
+                          (_, appThemeProvider) => appThemeProvider.isdarkmode,
+                      builder: (context, isDarkMode, _) {
+                        return Switch(
+                          value: isDarkMode,
+                          onChanged: (_) => menuProvider.toggleTheme(context),
+                          activeThumbColor: appTheme.primaryColor,
+                          inactiveThumbColor: appTheme.primaryColor,
+                        );
                       },
-                      activeThumbColor: appTheme.primaryColor,
-                      inactiveThumbColor: appTheme.primaryColor,
                     ),
                   ],
                 ),
               ),
             ),
           ),
-          dilSecimCubugu(context, appTheme),
+          dilSecimCubugu(context, appTheme, menuProvider),
           islemsecenegi(
             context,
             Icons.delete_sweep,
             l10n.deepCleanup,
             1,
             appTheme,
+            menuProvider,
           ),
-          islemsecenegi(context, Icons.lock, l10n.privateFiles, 2, appTheme),
-          islemsecenegi(context, Icons.favorite, l10n.savedFiles, 3, appTheme),
+          islemsecenegi(
+            context,
+            Icons.lock,
+            l10n.privateFiles,
+            2,
+            appTheme,
+            menuProvider,
+          ),
+          islemsecenegi(
+            context,
+            Icons.favorite,
+            l10n.savedFiles,
+            3,
+            appTheme,
+            menuProvider,
+          ),
         ],
       ),
     );
   }
 
-  Widget dilSecimCubugu(BuildContext context, appTheme) {
-    final localeProvider = context.watch<LocaleProvider>();
+  Widget dilSecimCubugu(
+    BuildContext context,
+    appTheme,
+    MenuProvider menuProvider,
+  ) {
     return Animate(
       effects: [FadeEffect(duration: const Duration(milliseconds: 100))],
       child: Container(
@@ -173,17 +170,20 @@ class _MenuState extends State<Menu> {
                   ],
                 ),
               ),
-              SegmentedButton<String>(
-                showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment<String>(value: 'tr', label: Text('TR')),
-                  ButtonSegment<String>(value: 'en', label: Text('EN')),
-                  ButtonSegment<String>(value: 'ar', label: Text('AR')),
-                ],
-                selected: {localeProvider.languageCode},
-                onSelectionChanged: (selection) {
-                  context.read<LocaleProvider>().setLanguageCode(
-                    selection.first,
+              Selector<LocaleProvider, String>(
+                selector: (_, localeProvider) => localeProvider.languageCode,
+                builder: (context, languageCode, _) {
+                  return SegmentedButton<String>(
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment<String>(value: 'tr', label: Text('TR')),
+                      ButtonSegment<String>(value: 'en', label: Text('EN')),
+                      ButtonSegment<String>(value: 'ar', label: Text('AR')),
+                    ],
+                    selected: {languageCode},
+                    onSelectionChanged: (selection) {
+                      menuProvider.changeLanguage(context, selection.first);
+                    },
                   );
                 },
               ),
@@ -195,6 +195,7 @@ class _MenuState extends State<Menu> {
   }
 
   Container saatbox(BuildContext context, appTheme) {
+    final menuProvider = context.read<MenuProvider>();
     return Container(
       width: MediaQuery.of(context).size.width / 4,
       height: 50,
@@ -205,7 +206,7 @@ class _MenuState extends State<Menu> {
       ),
       child: Center(
         child: StreamBuilder<String>(
-          stream: zamanigetir(),
+          stream: menuProvider.currentTimeStream,
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return const AppSkeleton(
@@ -268,12 +269,13 @@ class _MenuState extends State<Menu> {
   }
 
   SizedBox pilDurumuBox(BuildContext context, appTheme) {
+    final menuProvider = context.read<MenuProvider>();
     return SizedBox(
       width: MediaQuery.of(context).size.width / 4,
       height: 50,
       child: Center(
         child: StreamBuilder<int>(
-          stream: pildurumugetir(),
+          stream: menuProvider.batteryLevelStream,
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return const AppSkeleton(
@@ -368,17 +370,10 @@ class _MenuState extends State<Menu> {
     String hizmet,
     int index,
     appTheme,
+    MenuProvider menuProvider,
   ) {
     return GestureDetector(
-      onTap: () {
-        if (index == 1) {
-          context.push(Paths.temizliksayfasi);
-        } else if (index == 2) {
-          gizlidosyalarsifresisorgulama(context, '', appTheme);
-        } else if (index == 3) {
-          context.push(Paths.kaydedilendosyalar);
-        }
-      },
+      onTap: () => menuProvider.handleMenuAction(context, index),
       child: Animate(
         effects: [FadeEffect(duration: const Duration(milliseconds: 100))],
         child: Container(
@@ -411,116 +406,6 @@ class _MenuState extends State<Menu> {
           ),
         ),
       ),
-    );
-  }
-
-  Future<dynamic> gizlidosyalarsifresisorgulama(
-    BuildContext context,
-    String sifre,
-    appTheme,
-  ) {
-    return showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder:
-          (context) => Container(
-            padding: EdgeInsets.only(
-              top: 20,
-              left: 20,
-              right: 20,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 100,
-            ),
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Center(
-                  child: Animate(
-                    effects: [
-                      FadeEffect(duration: const Duration(milliseconds: 100)),
-                    ],
-                    child: Container(
-                      width: MediaQuery.of(context).size.width - 20,
-                      height: MediaQuery.of(context).size.height / 10,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            width: 0.3,
-                            color: appTheme.iconTheme.color!,
-                          ),
-                          top: BorderSide(
-                            width: 1,
-                            color: appTheme.iconTheme.color!,
-                          ),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.lock,
-                              color: appTheme.primaryColor,
-                              size: 50,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: TextField(
-                                controller: _controller,
-                                decoration: InputDecoration(
-                                  hintText: context.l10n.passwordHint,
-                                  hintStyle: appTheme.textTheme.bodyLarge,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        sifre = _controller.text;
-                        _controller.text = '';
-                        if (sifre == 'alihimeyda') {
-                          context.push(Paths.gizlidosyalar);
-                          Navigator.pop(context);
-                        } else {
-                          Navigator.pop(context);
-                          Fluttertoast.showToast(
-                            msg: context.l10n.incorrectPassword,
-                            toastLength: Toast.LENGTH_SHORT,
-                            gravity: ToastGravity.TOP,
-                            timeInSecForIosWeb: 10,
-                            backgroundColor: appTheme.secondaryHeaderColor,
-                            textColor: appTheme.textTheme.labelLarge!.color,
-                            fontSize: 16,
-                          );
-                        }
-                      },
-                      child: Text(context.l10n.ok),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(context.l10n.cancel),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
     );
   }
 }

@@ -33,6 +33,33 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errorOccurred => 'حدث خطأ ما';
 
   @override
+  String get fileAccessUnavailable => 'لا يمكن الوصول إلى هذا العنصر الآن.';
+
+  @override
+  String get fileAccessInvalidPath => 'المسار تالف أو غير صالح.';
+
+  @override
+  String get fileAccessDeleted => 'لم يعد من الممكن العثور على العنصر.';
+
+  @override
+  String get fileAccessExpectedDirectory => 'هذا المسار ليس مجلدًا صالحًا.';
+
+  @override
+  String get fileAccessReadDenied => 'لا يمكن قراءة هذا المجلد.';
+
+  @override
+  String get fileAccessPermissionDenied => 'تم رفض الوصول إلى هذا المسار.';
+
+  @override
+  String get fileAccessSymbolicLinkUnsupported =>
+      'مسارات الروابط الرمزية غير مدعومة.';
+
+  @override
+  String fileSyncItemsMissing(int count) {
+    return 'تعذر العثور على $count من العناصر المتعقبة وتمت إزالتها من القوائم.';
+  }
+
+  @override
   String get tryAgain => 'حاول مرة أخرى';
 
   @override
@@ -173,6 +200,20 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pasteSuccess => 'اكتملت عملية اللصق بنجاح';
 
   @override
+  String get targetFolderNotFound => 'تعذر العثور على المجلد الهدف.';
+
+  @override
+  String get destinationInsideSource =>
+      'لا يمكن نسخ المجلد أو نقله إلى داخل نفسه.';
+
+  @override
+  String get operationRolledBack =>
+      'تعذر إكمال العملية وتم التراجع عن جميع التغييرات.';
+
+  @override
+  String get operationRollbackFailed => 'فشلت العملية وتعذر إكمال التراجع.';
+
+  @override
   String get invalidName => 'أدخل اسماً صالحاً';
 
   @override
@@ -189,6 +230,34 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get operationMoving => 'جارٍ نقل العناصر...';
+
+  @override
+  String get operationDeletingProgress => 'عملية الحذف جارية';
+
+  @override
+  String get operationCopyingProgress => 'عملية النسخ جارية';
+
+  @override
+  String get operationMovingProgress => 'عملية النقل جارية';
+
+  @override
+  String get operationCreatingFolderProgress => 'عملية إنشاء المجلد جارية';
+
+  @override
+  String get operationRenamingProgress => 'عملية إعادة التسمية جارية';
+
+  @override
+  String get operationSyncingRecordsProgress => 'جارٍ مزامنة السجلات';
+
+  @override
+  String get operationRefreshingRootProgress => 'جارٍ تحديث قائمة المجلدات';
+
+  @override
+  String get operationRefreshingFolderProgress => 'جارٍ تحديث محتوى المجلد';
+
+  @override
+  String get operationRefreshingIndexProgress =>
+      'جارٍ تحديث فهرس البحث والتصنيفات';
 
   @override
   String get nameConflictTitle => 'يوجد تعارض في الاسم';

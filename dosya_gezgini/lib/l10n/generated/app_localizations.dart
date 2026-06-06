@@ -148,6 +148,54 @@ abstract class AppLocalizations {
   /// **'Something went wrong'**
   String get errorOccurred;
 
+  /// No description provided for @fileAccessUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This item is not accessible right now.'**
+  String get fileAccessUnavailable;
+
+  /// No description provided for @fileAccessInvalidPath.
+  ///
+  /// In en, this message translates to:
+  /// **'The path is invalid or corrupted.'**
+  String get fileAccessInvalidPath;
+
+  /// No description provided for @fileAccessDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'The item can no longer be found.'**
+  String get fileAccessDeleted;
+
+  /// No description provided for @fileAccessExpectedDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'This path is not a valid folder.'**
+  String get fileAccessExpectedDirectory;
+
+  /// No description provided for @fileAccessReadDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder cannot be read.'**
+  String get fileAccessReadDenied;
+
+  /// No description provided for @fileAccessPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Access to this path was denied.'**
+  String get fileAccessPermissionDenied;
+
+  /// No description provided for @fileAccessSymbolicLinkUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Symbolic link paths are not supported.'**
+  String get fileAccessSymbolicLinkUnsupported;
+
+  /// No description provided for @fileSyncItemsMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tracked items could not be found and were removed from the lists.'**
+  String fileSyncItemsMissing(int count);
+
   /// No description provided for @tryAgain.
   ///
   /// In en, this message translates to:
@@ -424,6 +472,30 @@ abstract class AppLocalizations {
   /// **'Paste completed successfully'**
   String get pasteSuccess;
 
+  /// No description provided for @targetFolderNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The destination folder can no longer be found.'**
+  String get targetFolderNotFound;
+
+  /// No description provided for @destinationInsideSource.
+  ///
+  /// In en, this message translates to:
+  /// **'A folder cannot be copied or moved into itself.'**
+  String get destinationInsideSource;
+
+  /// No description provided for @operationRolledBack.
+  ///
+  /// In en, this message translates to:
+  /// **'The operation could not be completed and all changes were rolled back.'**
+  String get operationRolledBack;
+
+  /// No description provided for @operationRollbackFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The operation failed and rollback could not be completed.'**
+  String get operationRollbackFailed;
+
   /// No description provided for @invalidName.
   ///
   /// In en, this message translates to:
@@ -459,6 +531,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Moving items...'**
   String get operationMoving;
+
+  /// No description provided for @operationDeletingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete operation in progress'**
+  String get operationDeletingProgress;
+
+  /// No description provided for @operationCopyingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy operation in progress'**
+  String get operationCopyingProgress;
+
+  /// No description provided for @operationMovingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Move operation in progress'**
+  String get operationMovingProgress;
+
+  /// No description provided for @operationCreatingFolderProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder creation in progress'**
+  String get operationCreatingFolderProgress;
+
+  /// No description provided for @operationRenamingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename operation in progress'**
+  String get operationRenamingProgress;
+
+  /// No description provided for @operationSyncingRecordsProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronizing records'**
+  String get operationSyncingRecordsProgress;
+
+  /// No description provided for @operationRefreshingRootProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing folder list'**
+  String get operationRefreshingRootProgress;
+
+  /// No description provided for @operationRefreshingFolderProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing folder content'**
+  String get operationRefreshingFolderProgress;
+
+  /// No description provided for @operationRefreshingIndexProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing search and category index'**
+  String get operationRefreshingIndexProgress;
 
   /// No description provided for @nameConflictTitle.
   ///

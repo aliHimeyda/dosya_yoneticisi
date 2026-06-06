@@ -33,6 +33,33 @@ class AppLocalizationsTr extends AppLocalizations {
   String get errorOccurred => 'Bir hata oluştu';
 
   @override
+  String get fileAccessUnavailable => 'Bu öğeye şu anda erişilemiyor.';
+
+  @override
+  String get fileAccessInvalidPath => 'Yol bozuk veya geçersiz.';
+
+  @override
+  String get fileAccessDeleted => 'Öğe artık bulunamıyor.';
+
+  @override
+  String get fileAccessExpectedDirectory => 'Bu yol geçerli bir klasör değil.';
+
+  @override
+  String get fileAccessReadDenied => 'Bu klasör okunamıyor.';
+
+  @override
+  String get fileAccessPermissionDenied => 'Bu yola erişim reddedildi.';
+
+  @override
+  String get fileAccessSymbolicLinkUnsupported =>
+      'Symbolic link yolları desteklenmiyor.';
+
+  @override
+  String fileSyncItemsMissing(int count) {
+    return '$count kayıt artık bulunamadı ve listelerden temizlendi.';
+  }
+
+  @override
   String get tryAgain => 'Tekrar Dene';
 
   @override
@@ -173,6 +200,21 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pasteSuccess => 'Yapıştırma işlemi başarılı';
 
   @override
+  String get targetFolderNotFound => 'Hedef klasör artık bulunamıyor.';
+
+  @override
+  String get destinationInsideSource =>
+      'Bir klasör kendi içine taşınamaz veya kopyalanamaz.';
+
+  @override
+  String get operationRolledBack =>
+      'İşlem tamamlanamadı, yapılan değişiklikler geri alındı.';
+
+  @override
+  String get operationRollbackFailed =>
+      'İşlem başarısız oldu ve geri alma tamamlanamadı.';
+
+  @override
   String get invalidName => 'Geçerli bir ad girin';
 
   @override
@@ -189,6 +231,36 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get operationMoving => 'Öğeler taşınıyor...';
+
+  @override
+  String get operationDeletingProgress => 'Silme işlemi devam ediyor';
+
+  @override
+  String get operationCopyingProgress => 'Kopyalama işlemi devam ediyor';
+
+  @override
+  String get operationMovingProgress => 'Taşıma işlemi devam ediyor';
+
+  @override
+  String get operationCreatingFolderProgress =>
+      'Klasör oluşturma işlemi devam ediyor';
+
+  @override
+  String get operationRenamingProgress =>
+      'Yeniden adlandırma işlemi devam ediyor';
+
+  @override
+  String get operationSyncingRecordsProgress => 'Kayıtlar senkronize ediliyor';
+
+  @override
+  String get operationRefreshingRootProgress => 'Klasör listesi yenileniyor';
+
+  @override
+  String get operationRefreshingFolderProgress => 'Klasör içeriği yenileniyor';
+
+  @override
+  String get operationRefreshingIndexProgress =>
+      'Arama ve kategori dizini yenileniyor';
 
   @override
   String get nameConflictTitle => 'Aynı isimde öğe var';

@@ -33,6 +33,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorOccurred => 'Something went wrong';
 
   @override
+  String get fileAccessUnavailable => 'This item is not accessible right now.';
+
+  @override
+  String get fileAccessInvalidPath => 'The path is invalid or corrupted.';
+
+  @override
+  String get fileAccessDeleted => 'The item can no longer be found.';
+
+  @override
+  String get fileAccessExpectedDirectory => 'This path is not a valid folder.';
+
+  @override
+  String get fileAccessReadDenied => 'This folder cannot be read.';
+
+  @override
+  String get fileAccessPermissionDenied => 'Access to this path was denied.';
+
+  @override
+  String get fileAccessSymbolicLinkUnsupported =>
+      'Symbolic link paths are not supported.';
+
+  @override
+  String fileSyncItemsMissing(int count) {
+    return '$count tracked items could not be found and were removed from the lists.';
+  }
+
+  @override
   String get tryAgain => 'Try Again';
 
   @override
@@ -173,6 +200,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pasteSuccess => 'Paste completed successfully';
 
   @override
+  String get targetFolderNotFound =>
+      'The destination folder can no longer be found.';
+
+  @override
+  String get destinationInsideSource =>
+      'A folder cannot be copied or moved into itself.';
+
+  @override
+  String get operationRolledBack =>
+      'The operation could not be completed and all changes were rolled back.';
+
+  @override
+  String get operationRollbackFailed =>
+      'The operation failed and rollback could not be completed.';
+
+  @override
   String get invalidName => 'Enter a valid name';
 
   @override
@@ -189,6 +232,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get operationMoving => 'Moving items...';
+
+  @override
+  String get operationDeletingProgress => 'Delete operation in progress';
+
+  @override
+  String get operationCopyingProgress => 'Copy operation in progress';
+
+  @override
+  String get operationMovingProgress => 'Move operation in progress';
+
+  @override
+  String get operationCreatingFolderProgress => 'Folder creation in progress';
+
+  @override
+  String get operationRenamingProgress => 'Rename operation in progress';
+
+  @override
+  String get operationSyncingRecordsProgress => 'Synchronizing records';
+
+  @override
+  String get operationRefreshingRootProgress => 'Refreshing folder list';
+
+  @override
+  String get operationRefreshingFolderProgress => 'Refreshing folder content';
+
+  @override
+  String get operationRefreshingIndexProgress =>
+      'Refreshing search and category index';
 
   @override
   String get nameConflictTitle => 'Name conflict';

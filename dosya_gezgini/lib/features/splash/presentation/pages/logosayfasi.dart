@@ -1,38 +1,26 @@
-import 'package:dosya_gezgini/app/router/app_router.dart';
+import 'package:dosya_gezgini/features/splash/state/logosayfasi_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
-class Logosayfasi extends StatefulWidget {
+class Logosayfasi extends StatelessWidget {
   const Logosayfasi({super.key});
 
   @override
-  State<Logosayfasi> createState() => _LogosayfasiState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<LogosayfasiProvider>(
+      create: (_) => LogosayfasiProvider(),
+      child: const _LogosayfasiView(),
+    );
+  }
 }
 
-class _LogosayfasiState extends State<Logosayfasi> {
-  @override
-  void initState() {
-    super.initState();
-    izinverilmismi();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) {
-        return;
-      }
-      context.go(Paths.anasayfa);
-    });
-  }
-
-  Future<void> izinverilmismi() async {
-    final pref = await SharedPreferences.getInstance();
-    final izin = pref.getBool('izinanahtari');
-    if (izin == null) {
-      await pref.setBool('izinanahtari', false);
-    }
-  }
+class _LogosayfasiView extends StatelessWidget {
+  const _LogosayfasiView();
 
   @override
   Widget build(BuildContext context) {
+    context.read<LogosayfasiProvider>().start(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFFffc4d2),
       body: Center(

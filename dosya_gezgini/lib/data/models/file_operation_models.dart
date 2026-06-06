@@ -9,14 +9,19 @@ enum FileConflictResolution { overwrite, createUniqueName, skip, cancel }
 class FileOperationErrorCodes {
   FileOperationErrorCodes._();
 
+  static const String accessDenied = 'access_denied';
   static const String alreadyExists = 'already_exists';
   static const String conflict = 'conflict';
   static const String destinationInSource = 'destination_in_source';
   static const String insufficientSpace = 'insufficient_space';
   static const String invalidName = 'invalid_name';
+  static const String invalidPath = 'invalid_path';
   static const String parentNotFound = 'parent_not_found';
+  static const String rolledBack = 'rolled_back';
+  static const String rollbackFailed = 'rollback_failed';
   static const String sameDestination = 'same_destination';
   static const String sourceNotFound = 'source_not_found';
+  static const String symbolicLinkUnsupported = 'symbolic_link_unsupported';
 }
 
 class FileOperationEntry {
@@ -48,12 +53,30 @@ class FileOperationProgress {
     required this.processedItems,
     required this.totalItems,
     this.currentPath,
+    this.statusLabel,
   });
 
   final FileOperationType operationType;
   final int processedItems;
   final int totalItems;
   final String? currentPath;
+  final String? statusLabel;
+
+  FileOperationProgress copyWith({
+    FileOperationType? operationType,
+    int? processedItems,
+    int? totalItems,
+    String? currentPath,
+    String? statusLabel,
+  }) {
+    return FileOperationProgress(
+      operationType: operationType ?? this.operationType,
+      processedItems: processedItems ?? this.processedItems,
+      totalItems: totalItems ?? this.totalItems,
+      currentPath: currentPath ?? this.currentPath,
+      statusLabel: statusLabel ?? this.statusLabel,
+    );
+  }
 
   double? get progress {
     if (totalItems <= 0) {

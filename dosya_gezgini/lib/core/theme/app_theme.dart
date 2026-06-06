@@ -33,6 +33,7 @@ class AppTheme extends ChangeNotifier {
     brightness: Brightness.light, // Tema parlaklığını açık mod olarak ayarlar
     primaryColor: AppColors.kuyupembe, // Uygulamanın ana rengini belirler
     secondaryHeaderColor: const Color.fromARGB(223, 255, 216, 225),
+    canvasColor: AppColors.koyuBeyaz,
     scaffoldBackgroundColor:
         AppColors.koyuBeyaz, // Sayfanın arka plan rengini belirler
 
@@ -130,6 +131,7 @@ class AppTheme extends ChangeNotifier {
     primaryColor: AppColors.kuyupembe, // Koyu mavi - Ana Renk
     secondaryHeaderColor: const Color.fromARGB(255, 158, 110, 122),
 
+    canvasColor: AppColors.siyah,
     scaffoldBackgroundColor: AppColors.siyah, // Siyah arka plan
     appBarTheme: AppBarTheme(
       backgroundColor: AppColors.kuyupembe, // Koyu başlık rengi

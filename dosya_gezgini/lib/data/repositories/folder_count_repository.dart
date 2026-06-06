@@ -17,6 +17,16 @@ class FolderCountRepository {
     return FolderCountModel.fromMap(rawValue);
   }
 
+  Future<List<FolderCountModel>> readAll() async {
+    final box = await _hiveService.openMapBox(HiveBoxNames.folderCountCache);
+    final items = box.values
+        .whereType<Map<dynamic, dynamic>>()
+        .map(FolderCountModel.fromMap)
+        .toList(growable: false)
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return List<FolderCountModel>.unmodifiable(items);
+  }
+
   Future<void> upsert(FolderCountModel item) async {
     final box = await _hiveService.openMapBox(HiveBoxNames.folderCountCache);
     await box.put(item.path, item.toMap());

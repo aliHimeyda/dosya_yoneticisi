@@ -8,6 +8,21 @@
   "privateFiles": "الملفات الخاصة",
   "savedFiles": "الملفات المحفوظة",
   "errorOccurred": "حدث خطأ ما",
+  "fileAccessUnavailable": "لا يمكن الوصول إلى هذا العنصر الآن.",
+  "fileAccessInvalidPath": "المسار تالف أو غير صالح.",
+  "fileAccessDeleted": "لم يعد من الممكن العثور على العنصر.",
+  "fileAccessExpectedDirectory": "هذا المسار ليس مجلدًا صالحًا.",
+  "fileAccessReadDenied": "لا يمكن قراءة هذا المجلد.",
+  "fileAccessPermissionDenied": "تم رفض الوصول إلى هذا المسار.",
+  "fileAccessSymbolicLinkUnsupported": "مسارات الروابط الرمزية غير مدعومة.",
+  "fileSyncItemsMissing": "تعذر العثور على {count} من العناصر المتعقبة وتمت إزالتها من القوائم.",
+  "@fileSyncItemsMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tryAgain": "حاول مرة أخرى",
   "recentlyVisited": "تمت زيارته مؤخرًا",
   "noOpenedFolder": "لا يوجد مجلد مفتوح بعد.",
@@ -61,12 +76,25 @@
   "savedSuccess": "تم الحفظ",
   "hiddenSuccess": "تم الإخفاء",
   "pasteSuccess": "اكتملت عملية اللصق بنجاح",
+  "targetFolderNotFound": "تعذر العثور على المجلد الهدف.",
+  "destinationInsideSource": "لا يمكن نسخ المجلد أو نقله إلى داخل نفسه.",
+  "operationRolledBack": "تعذر إكمال العملية وتم التراجع عن جميع التغييرات.",
+  "operationRollbackFailed": "فشلت العملية وتعذر إكمال التراجع.",
   "invalidName": "أدخل اسماً صالحاً",
   "itemAlreadyExists": "يوجد عنصر آخر بالاسم نفسه",
   "insufficientStorageSpace": "لا توجد مساحة خالية كافية",
   "operationDeleting": "جارٍ حذف العناصر...",
   "operationCopying": "جارٍ نسخ العناصر...",
   "operationMoving": "جارٍ نقل العناصر...",
+  "operationDeletingProgress": "عملية الحذف جارية",
+  "operationCopyingProgress": "عملية النسخ جارية",
+  "operationMovingProgress": "عملية النقل جارية",
+  "operationCreatingFolderProgress": "عملية إنشاء المجلد جارية",
+  "operationRenamingProgress": "عملية إعادة التسمية جارية",
+  "operationSyncingRecordsProgress": "جارٍ مزامنة السجلات",
+  "operationRefreshingRootProgress": "جارٍ تحديث قائمة المجلدات",
+  "operationRefreshingFolderProgress": "جارٍ تحديث محتوى المجلد",
+  "operationRefreshingIndexProgress": "جارٍ تحديث فهرس البحث والتصنيفات",
   "nameConflictTitle": "يوجد تعارض في الاسم",
   "nameConflictMessage": "{name} موجود بالفعل. كيف تريد المتابعة؟",
   "@nameConflictMessage": {

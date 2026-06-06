@@ -1,3 +1,5 @@
+import 'package:dosya_gezgini/core/localization/file_access_error_messages.dart';
+import 'package:dosya_gezgini/core/localization/file_sync_messages.dart';
 import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
 import 'package:dosya_gezgini/features/files/state/izinler.dart';
 import 'package:dosya_gezgini/shared/pagination/paginated_file_list.dart';
@@ -16,7 +18,19 @@ class Dosyalar extends StatelessWidget {
   }
 
   Future<void> _refreshEntries(BuildContext context) async {
-    await context.read<Izinler>().refreshRootEntries();
+    final result = await context.read<Izinler>().refreshRootEntries();
+    if (!context.mounted) {
+      return;
+    }
+
+    final message = buildFileSyncNoticeMessage(context.l10n, result);
+    if (message == null) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildRefreshableState(BuildContext context, {required Widget child}) {
@@ -58,10 +72,26 @@ class Dosyalar extends StatelessWidget {
           );
         }
 
-        return Selector<Izinler, FolderFileEntries>(
-          selector: (_, izinler) => izinler.rootEntries,
-          builder: (context, entries, _) {
+        return Selector<Izinler, ({FolderFileEntries entries, Object? error})>(
+          selector:
+              (_, izinler) => (
+                entries: izinler.rootEntries,
+                error: izinler.rootLoadError,
+              ),
+          builder: (context, state, _) {
+            final entries = state.entries;
             if (entries.isEmpty) {
+              if (state.error != null) {
+                return _buildRefreshableState(
+                  context,
+                  child: ErrorStateWidget(
+                    message: resolveFileAccessErrorMessage(l10n, state.error),
+                    onRetry: () => _refreshEntries(context),
+                    retryLabel: l10n.tryAgain,
+                  ),
+                );
+              }
+
               return _buildRefreshableState(
                 context,
                 child: EmptyStateWidget(message: l10n.folderEmpty),

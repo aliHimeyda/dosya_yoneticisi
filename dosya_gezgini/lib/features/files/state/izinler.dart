@@ -1,12 +1,16 @@
 import 'dart:io';
 
 import 'package:dosya_gezgini/core/constants/storage_paths.dart';
+import 'package:dosya_gezgini/data/models/file_sync_models.dart';
 import 'package:dosya_gezgini/data/models/recent_item_model.dart';
 import 'package:dosya_gezgini/data/repositories/directory_cache_repository.dart';
 import 'package:dosya_gezgini/data/repositories/folder_count_repository.dart';
 import 'package:dosya_gezgini/data/repositories/hidden_repository.dart';
 import 'package:dosya_gezgini/data/repositories/recent_repository.dart';
 import 'package:dosya_gezgini/data/repositories/saved_repository.dart';
+import 'package:dosya_gezgini/data/services/file_access_service.dart';
+import 'package:dosya_gezgini/data/services/file_metadata_service.dart';
+import 'package:dosya_gezgini/data/services/file_sync_service.dart';
 import 'package:dosya_gezgini/features/files/state/folderleragaci.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -16,32 +20,42 @@ import 'package:shared_preferences/shared_preferences.dart';
 class Izinler extends ChangeNotifier {
   Izinler({
     required DirectoryCacheRepository directoryCacheRepository,
+    required FileAccessService fileAccessService,
+    required FileMetadataService fileMetadataService,
+    required FileSyncService fileSyncService,
     required FolderCountRepository folderCountRepository,
     required RecentRepository recentRepository,
     required SavedRepository savedRepository,
     required HiddenRepository hiddenRepository,
   }) : _recentRepository = recentRepository,
+       _fileMetadataService = fileMetadataService,
+       _fileSyncService = fileSyncService,
        _folderCountRepository = folderCountRepository,
        _savedRepository = savedRepository,
        _hiddenRepository = hiddenRepository,
        fileTree = FileTree(
          storageRootPath,
          directoryCacheRepository: directoryCacheRepository,
+         fileAccessService: fileAccessService,
+         fileMetadataService: fileMetadataService,
          folderCountRepository: folderCountRepository,
        ) {
     fileTree.addListener(notifyListeners);
   }
 
   final FolderCountRepository _folderCountRepository;
+  final FileMetadataService _fileMetadataService;
   final RecentRepository _recentRepository;
   final SavedRepository _savedRepository;
   final HiddenRepository _hiddenRepository;
+  final FileSyncService _fileSyncService;
   final FileTree fileTree;
 
   bool _izin = false;
   bool _izinDurumuHazir = false;
   List<String>? _currentFolderPath;
   FolderNode? _currentFolder;
+  Object? _rootLoadError;
 
   final List<FolderNode> previousFolders = [];
 
@@ -70,6 +84,7 @@ class Izinler extends ChangeNotifier {
   bool get isPermissionStateReady => _izinDurumuHazir;
   FolderNode? get currentFolder => _currentFolder;
   FolderNode? get getCurrentFolder => _currentFolder;
+  Object? get rootLoadError => _rootLoadError;
   List<String> get currentFolderPathSegments =>
       List<String>.unmodifiable(getcurrentFolderPath ?? const ['kok dizin']);
   FolderFileEntries get rootEntries => FolderFileEntries(
@@ -154,10 +169,9 @@ class Izinler extends ChangeNotifier {
 
     if (status.isGranted) {
       await setIzin(true);
-      await syncHiddenEntries();
-      await fileTree.buildTree();
-      await syncSavedEntries();
-      await syncRecentEntries();
+      await synchronizePersistentCollections();
+      final result = await fileTree.buildTree();
+      _rootLoadError = result.error;
       notifyListeners();
       return;
     }
@@ -166,10 +180,9 @@ class Izinler extends ChangeNotifier {
 
     if (newStatus.isGranted) {
       await setIzin(true);
-      await syncHiddenEntries();
-      await fileTree.buildTree();
-      await syncSavedEntries();
-      await syncRecentEntries();
+      await synchronizePersistentCollections();
+      final result = await fileTree.buildTree();
+      _rootLoadError = result.error;
       notifyListeners();
       return;
     }
@@ -183,65 +196,56 @@ class Izinler extends ChangeNotifier {
     await setIzin(false);
   }
 
-  Future<void> syncSavedEntries() async {
-    final items = await _savedRepository.readAll();
-    final resolvedEntries = await _resolvePersistedEntries(items);
-    if (resolvedEntries.missingPaths.isNotEmpty) {
-      await _savedRepository.removePaths(resolvedEntries.missingPaths);
-    }
-
-    fileTree.setSavedItems(
-      folders: resolvedEntries.folders,
-      files: resolvedEntries.files,
-    );
+  Future<FileSyncCollectionResult> syncSavedEntries() async {
+    final result = await _fileSyncService.syncSaved();
+    await _applySavedSyncResult(result);
+    return result;
   }
 
-  Future<void> syncHiddenEntries() async {
-    final items = await _hiddenRepository.readAll();
-    final resolvedEntries = await _resolvePersistedEntries(items);
-    if (resolvedEntries.missingPaths.isNotEmpty) {
-      await _hiddenRepository.removePaths(resolvedEntries.missingPaths);
-    }
-
-    fileTree.setHiddenPaths(resolvedEntries.paths.toSet());
-    fileTree.setHiddenItems(
-      folders: resolvedEntries.folders,
-      files: resolvedEntries.files,
-    );
+  Future<FileSyncCollectionResult> syncHiddenEntries() async {
+    final result = await _fileSyncService.syncHidden();
+    await _applyHiddenSyncResult(result);
+    return result;
   }
 
-  Future<void> syncRecentEntries() async {
-    final items = await _recentRepository.readAll();
-    final resolvedEntries = await _resolvePersistedEntries(items);
-    if (resolvedEntries.missingPaths.isNotEmpty) {
-      await _recentRepository.removePaths(resolvedEntries.missingPaths);
-    }
-
-    fileTree.setRecentItems(
-      folders: resolvedEntries.folders,
-      files: resolvedEntries.files,
-    );
+  Future<FileSyncCollectionResult> syncRecentEntries() async {
+    final result = await _fileSyncService.syncRecent();
+    await _applyRecentSyncResult(result);
+    return result;
   }
 
-  Future<void> refreshRootEntries() async {
+  Future<FileSyncResult> synchronizePersistentCollections({
+    bool refreshIndex = false,
+  }) async {
+    final result = await _fileSyncService.syncAll(
+      rootPath: fileTree.rootPath,
+      refreshIndex: refreshIndex,
+    );
+    await _applyHiddenSyncResult(result.hidden);
+    await _applySavedSyncResult(result.saved);
+    await _applyRecentSyncResult(result.recent);
+    return result;
+  }
+
+  Future<FileSyncResult> refreshRootEntries() async {
     if (!hasStoragePermission) {
       await requestAllStoragePermission();
-      return;
+      return const FileSyncResult();
     }
 
-    await syncHiddenEntries();
-    await fileTree.buildTree(forceRefresh: true);
-    await syncSavedEntries();
-    await syncRecentEntries();
+    final syncResult = await synchronizePersistentCollections();
+    final result = await fileTree.buildTree(forceRefresh: true);
+    _rootLoadError = result.error;
     notifyListeners();
+    return syncResult;
   }
 
-  Future<void> refreshHiddenEntries() async {
-    await syncHiddenEntries();
+  Future<FileSyncResult> refreshHiddenEntries() async {
+    return synchronizePersistentCollections();
   }
 
-  Future<void> refreshSavedEntries() async {
-    await syncSavedEntries();
+  Future<FileSyncResult> refreshSavedEntries() async {
+    return synchronizePersistentCollections();
   }
 
   Future<void> ensureFolderCount(
@@ -256,6 +260,13 @@ class Izinler extends ChangeNotifier {
     bool refresh = false,
   }) async {
     await fileTree.primeFolderCounts(folders, refresh: refresh);
+  }
+
+  Future<void> primeFileMetadata(
+    Iterable<File> files, {
+    bool refresh = false,
+  }) async {
+    await _fileMetadataService.primeFiles(files, forceRefresh: refresh);
   }
 
   Future<void> addRecentFolderEntry(FolderNode folder) async {
@@ -305,35 +316,55 @@ class Izinler extends ChangeNotifier {
       _savedRepository.removePaths(uniquePaths),
       _hiddenRepository.removePaths(uniquePaths),
     ]);
-    await syncHiddenEntries();
-    await syncSavedEntries();
-    await syncRecentEntries();
+    await synchronizePersistentCollections();
   }
 
-  Future<_ResolvedPersistedEntries> _resolvePersistedEntries(
-    Iterable<dynamic> items,
+  Future<void> _applySavedSyncResult(FileSyncCollectionResult result) async {
+    final resolvedEntries = await _materializeSyncedEntries(
+      result.retainedEntries,
+    );
+    fileTree.setSavedItems(
+      folders: resolvedEntries.folders,
+      files: resolvedEntries.files,
+    );
+  }
+
+  Future<void> _applyHiddenSyncResult(FileSyncCollectionResult result) async {
+    final resolvedEntries = await _materializeSyncedEntries(
+      result.retainedEntries,
+    );
+    fileTree.setHiddenPaths(resolvedEntries.paths.toSet());
+    fileTree.setHiddenItems(
+      folders: resolvedEntries.folders,
+      files: resolvedEntries.files,
+    );
+  }
+
+  Future<void> _applyRecentSyncResult(FileSyncCollectionResult result) async {
+    final resolvedEntries = await _materializeSyncedEntries(
+      result.retainedEntries,
+    );
+    fileTree.setRecentItems(
+      folders: resolvedEntries.folders,
+      files: resolvedEntries.files,
+    );
+  }
+
+  Future<_ResolvedPersistedEntries> _materializeSyncedEntries(
+    Iterable<SyncedPathEntry> items,
   ) async {
     final folders = <FolderNode>[];
     final files = <File>[];
     final paths = <String>[];
-    final missingPaths = <String>[];
 
     for (final item in items) {
-      final path = (item.path as String?)?.trim() ?? '';
+      final path = item.path.trim();
       if (path.isEmpty) {
         continue;
       }
 
-      final isDirectory = item.isDirectory as bool? ?? false;
-      final entity =
-          isDirectory ? Directory(path) as FileSystemEntity : File(path);
-      if (!await entity.exists()) {
-        missingPaths.add(path);
-        continue;
-      }
-
       paths.add(path);
-      if (isDirectory) {
+      if (item.isDirectory) {
         final folder = FolderNode(
           pathinfo.basename(path).isEmpty ? path : pathinfo.basename(path),
           path,
@@ -355,7 +386,6 @@ class Izinler extends ChangeNotifier {
       folders: folders,
       files: files,
       paths: paths,
-      missingPaths: missingPaths,
     );
   }
 
@@ -396,11 +426,9 @@ class _ResolvedPersistedEntries {
     required this.folders,
     required this.files,
     required this.paths,
-    required this.missingPaths,
   });
 
   final List<FolderNode> folders;
   final List<File> files;
   final List<String> paths;
-  final List<String> missingPaths;
 }

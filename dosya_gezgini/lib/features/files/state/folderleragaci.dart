@@ -4,9 +4,12 @@ import 'dart:io';
 
 import 'package:dosya_gezgini/data/constants/file_category_constants.dart';
 import 'package:dosya_gezgini/data/models/directory_cache_model.dart';
+import 'package:dosya_gezgini/data/models/file_access_result.dart';
 import 'package:dosya_gezgini/data/models/folder_count_model.dart';
 import 'package:dosya_gezgini/data/repositories/directory_cache_repository.dart';
 import 'package:dosya_gezgini/data/repositories/folder_count_repository.dart';
+import 'package:dosya_gezgini/data/services/file_access_service.dart';
+import 'package:dosya_gezgini/data/services/file_metadata_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as pathinfo;
@@ -52,11 +55,15 @@ class FolderNode extends ChangeNotifier {
   bool get isHydratedFromCache => _isHydratedFromCache;
   FolderCountModel? get folderCountModel => _folderCountModel;
   int? get cachedFolderCount =>
-      _folderCountModel?.isLoaded == true ? _folderCountModel!.folderCount : null;
+      _folderCountModel?.isLoaded == true
+          ? _folderCountModel!.folderCount
+          : null;
   int? get cachedFileCount =>
       _folderCountModel?.isLoaded == true ? _folderCountModel!.fileCount : null;
   int? get cachedTotalCount =>
-      _folderCountModel?.isLoaded == true ? _folderCountModel!.totalCount : null;
+      _folderCountModel?.isLoaded == true
+          ? _folderCountModel!.totalCount
+          : null;
   String get itemCountLabel => cachedTotalCount?.toString() ?? '-';
 
   String get formatlanmistarih {
@@ -123,10 +130,14 @@ class FileTree extends ChangeNotifier {
   FileTree(
     this.rootPath, {
     required DirectoryCacheRepository directoryCacheRepository,
+    required FileAccessService fileAccessService,
+    required FileMetadataService fileMetadataService,
     required FolderCountRepository folderCountRepository,
   }) : _directoryCacheRepository = directoryCacheRepository,
+       _fileAccessService = fileAccessService,
+       _fileMetadataService = fileMetadataService,
        _folderCountRepository = folderCountRepository,
-      root = FolderNode("Root", rootPath, [], [], null);
+       root = FolderNode("Root", rootPath, [], [], null);
 
   static const int _progressChunkSize = 25;
   static const int _maxConcurrentFolderCountJobs = 2;
@@ -134,6 +145,8 @@ class FileTree extends ChangeNotifier {
 
   final String rootPath;
   final DirectoryCacheRepository _directoryCacheRepository;
+  final FileAccessService _fileAccessService;
+  final FileMetadataService _fileMetadataService;
   final FolderCountRepository _folderCountRepository;
   final FolderNode root;
   Set<String> _hiddenPaths = <String>{};
@@ -263,9 +276,8 @@ class FileTree extends ChangeNotifier {
     );
   }
 
-  Future<FolderNode> buildTree({bool forceRefresh = false}) async {
-    await loadFolder(root, forceRefresh: forceRefresh);
-    return root;
+  Future<FolderLoadResult> buildTree({bool forceRefresh = false}) async {
+    return loadFolder(root, forceRefresh: forceRefresh);
   }
 
   Future<void> primeFolderCounts(
@@ -360,13 +372,19 @@ class FileTree extends ChangeNotifier {
     required bool forceRefresh,
     ValueChanged<FolderNode>? onProgress,
   }) async {
-    final dir = Directory(folder.path);
-    if (!await dir.exists()) {
-      await _clearDirectoryCache(folder.path);
+    final accessResult = await _fileAccessService.validateDirectory(
+      folder.path,
+    );
+    if (!accessResult.isAccessible) {
+      _logAccessFailure(accessResult, operation: 'load_folder');
+      if (accessResult.shouldPruneCaches) {
+        await _clearFolderCaches(folder.path);
+      }
       folder.replaceChildren(folders: [], files: []);
-      return const FolderLoadResult.failure('directory_not_found');
+      return FolderLoadResult.failure(accessResult);
     }
 
+    final dir = Directory(folder.path);
     final directoryStat = await dir.stat();
     final persistedCache =
         forceRefresh ? null : await _readDirectoryCache(folder.path);
@@ -378,6 +396,10 @@ class FileTree extends ChangeNotifier {
         shouldHydrateFromCache || folder.childCount > 0;
 
     if (shouldHydrateFromCache) {
+      await _fileMetadataService.primeFiles(
+        persistedCache.filePaths.map(File.new),
+        allowFilesystemRead: false,
+      );
       _applyDirectoryCacheSnapshot(
         folder,
         persistedCache,
@@ -430,6 +452,17 @@ class FileTree extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint("Klasor okunamadi ${folder.path}: $e");
+      final recheckedAccess = await _fileAccessService.validateDirectory(
+        folder.path,
+      );
+      if (!recheckedAccess.isAccessible) {
+        _logAccessFailure(recheckedAccess, operation: 'load_folder');
+        if (recheckedAccess.shouldPruneCaches) {
+          await _clearFolderCaches(folder.path);
+        }
+        folder.replaceChildren(folders: [], files: []);
+        return FolderLoadResult.failure(recheckedAccess);
+      }
       if (folders.isEmpty && files.isEmpty) {
         folder.replaceChildren(folders: [], files: []);
       }
@@ -441,6 +474,10 @@ class FileTree extends ChangeNotifier {
       folders: folders,
       files: files,
       onProgress: onProgress,
+    );
+    await _fileMetadataService.primeFiles(
+      files,
+      forceRefresh: forceRefresh,
     );
     await _persistDirectoryCache(
       folder,
@@ -520,16 +557,14 @@ class FileTree extends ChangeNotifier {
     DirectoryCacheModel cache, {
     ValueChanged<FolderNode>? onProgress,
   }) {
-    final cachedFolders =
-        cache.folderPaths
-            .where((path) => !_hiddenPaths.contains(path))
-            .map((path) => _restoreFolderNodeFromCache(path, folder))
-            .toList(growable: false);
-    final cachedFiles =
-        cache.filePaths
-            .where((path) => !_hiddenPaths.contains(path))
-            .map(File.new)
-            .toList(growable: false);
+    final cachedFolders = cache.folderPaths
+        .where((path) => !_hiddenPaths.contains(path))
+        .map((path) => _restoreFolderNodeFromCache(path, folder))
+        .toList(growable: false);
+    final cachedFiles = cache.filePaths
+        .where((path) => !_hiddenPaths.contains(path))
+        .map(File.new)
+        .toList(growable: false);
 
     _emitFolderSnapshot(
       folder,
@@ -564,10 +599,12 @@ class FileTree extends ChangeNotifier {
   }) async {
     final cacheModel = DirectoryCacheModel(
       path: folder.path,
-      folderPaths:
-          folders.map((childFolder) => childFolder.path).toList(growable: false),
-      filePaths:
-          files.map((childFile) => childFile.path).toList(growable: false),
+      folderPaths: folders
+          .map((childFolder) => childFolder.path)
+          .toList(growable: false),
+      filePaths: files
+          .map((childFile) => childFile.path)
+          .toList(growable: false),
       directoryModifiedAt: directoryModifiedAt,
       updatedAt: DateTime.now(),
     );
@@ -578,6 +615,12 @@ class FileTree extends ChangeNotifier {
   Future<void> _clearDirectoryCache(String path) async {
     _directoryCacheMemory.remove(path);
     await _directoryCacheRepository.removePaths(<String>[path]);
+  }
+
+  Future<void> _clearFolderCaches(String path) async {
+    await _clearDirectoryCache(path);
+    _folderCountCache.remove(path);
+    await _folderCountRepository.removePaths(<String>[path]);
   }
 
   void _enqueueFolderCountJob(FolderNode folder) {
@@ -623,11 +666,17 @@ class FileTree extends ChangeNotifier {
   }
 
   Future<FolderCountModel?> _calculateFolderCount(String folderPath) async {
-    final directory = Directory(folderPath);
-    if (!await directory.exists()) {
+    final accessResult = await _fileAccessService.validateDirectory(folderPath);
+    if (!accessResult.isAccessible) {
+      _logAccessFailure(accessResult, operation: 'folder_count');
+      if (accessResult.shouldPruneCaches) {
+        await _folderCountRepository.removePaths(<String>[folderPath]);
+        _folderCountCache.remove(folderPath);
+      }
       return null;
     }
 
+    final directory = Directory(folderPath);
     var folderCount = 0;
     var fileCount = 0;
     var processedItems = 0;
@@ -684,6 +733,12 @@ class FileTree extends ChangeNotifier {
     _folderCountCache[folder.path] = model;
     folder.applyFolderCountModel(model);
     await _folderCountRepository.upsert(model);
+  }
+
+  void _logAccessFailure(FileAccessResult result, {required String operation}) {
+    debugPrint(
+      'File access check failed during $operation for ${result.path}: ${result.debugCode}',
+    );
   }
 }
 

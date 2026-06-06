@@ -4,6 +4,7 @@ import 'package:dosya_gezgini/core/theme/app_theme.dart';
 import 'package:dosya_gezgini/data/repositories/category_repository.dart';
 import 'package:dosya_gezgini/data/repositories/directory_cache_repository.dart';
 import 'package:dosya_gezgini/data/repositories/file_index_repository.dart';
+import 'package:dosya_gezgini/data/repositories/file_metadata_repository.dart';
 import 'package:dosya_gezgini/data/repositories/folder_count_repository.dart';
 import 'package:dosya_gezgini/data/repositories/hidden_repository.dart';
 import 'package:dosya_gezgini/data/repositories/recent_repository.dart';
@@ -12,8 +13,11 @@ import 'package:dosya_gezgini/data/repositories/search_repository.dart';
 import 'package:dosya_gezgini/data/repositories/thumbnail_cache_repository.dart';
 import 'package:dosya_gezgini/data/services/category_query_service.dart';
 import 'package:dosya_gezgini/data/services/cleaning_service.dart';
+import 'package:dosya_gezgini/data/services/file_access_service.dart';
 import 'package:dosya_gezgini/data/services/file_index_service.dart';
+import 'package:dosya_gezgini/data/services/file_metadata_service.dart';
 import 'package:dosya_gezgini/data/services/file_operation_service.dart';
+import 'package:dosya_gezgini/data/services/file_sync_service.dart';
 import 'package:dosya_gezgini/data/services/file_system_service.dart';
 import 'package:dosya_gezgini/data/services/hive_service.dart';
 import 'package:dosya_gezgini/data/services/search_query_service.dart';
@@ -34,6 +38,7 @@ Future<void> bootstrap() async {
   await hiveService.init();
   final fileIndexRepository = FileIndexRepository(hiveService);
   final directoryCacheRepository = DirectoryCacheRepository(hiveService);
+  final fileMetadataRepository = FileMetadataRepository(hiveService);
   final folderCountRepository = FolderCountRepository(hiveService);
   final recentRepository = RecentRepository(hiveService);
   final savedRepository = SavedRepository(hiveService);
@@ -42,14 +47,32 @@ Future<void> bootstrap() async {
   final thumbnailCacheService = ThumbnailCacheService(
     repository: thumbnailCacheRepository,
   );
+  final fileAccessService = FileAccessService();
+  final fileMetadataService = FileMetadataService(
+    repository: fileMetadataRepository,
+    fileAccessService: fileAccessService,
+  );
   final fileSystemService = FileSystemService();
   final fileIndexService = FileIndexService(
     repository: fileIndexRepository,
     fileSystemService: fileSystemService,
   );
-  final fileOperationService = FileOperationService();
+  final fileOperationService = FileOperationService(
+    fileAccessService: fileAccessService,
+  );
+  final fileSyncService = FileSyncService(
+    fileAccessService: fileAccessService,
+    savedRepository: savedRepository,
+    hiddenRepository: hiddenRepository,
+    recentRepository: recentRepository,
+    directoryCacheRepository: directoryCacheRepository,
+    fileMetadataService: fileMetadataService,
+    folderCountRepository: folderCountRepository,
+    fileIndexService: fileIndexService,
+  );
   final cleaningService = CleaningService(
     fileIndexService: fileIndexService,
+    fileMetadataService: fileMetadataService,
     thumbnailCacheRepository: thumbnailCacheRepository,
   );
   final categoryRepository = CategoryRepository(
@@ -73,12 +96,16 @@ Future<void> bootstrap() async {
       hiveService: hiveService,
       fileIndexRepository: fileIndexRepository,
       directoryCacheRepository: directoryCacheRepository,
+      fileMetadataRepository: fileMetadataRepository,
       folderCountRepository: folderCountRepository,
       recentRepository: recentRepository,
       savedRepository: savedRepository,
       hiddenRepository: hiddenRepository,
+      fileAccessService: fileAccessService,
+      fileMetadataService: fileMetadataService,
       cleaningService: cleaningService,
       fileOperationService: fileOperationService,
+      fileSyncService: fileSyncService,
       thumbnailCacheRepository: thumbnailCacheRepository,
       thumbnailCacheService: thumbnailCacheService,
       fileIndexService: fileIndexService,
@@ -92,12 +119,16 @@ Widget buildApp({
   required HiveService hiveService,
   required FileIndexRepository fileIndexRepository,
   required DirectoryCacheRepository directoryCacheRepository,
+  required FileMetadataRepository fileMetadataRepository,
   required FolderCountRepository folderCountRepository,
   required RecentRepository recentRepository,
   required SavedRepository savedRepository,
   required HiddenRepository hiddenRepository,
+  required FileAccessService fileAccessService,
+  required FileMetadataService fileMetadataService,
   required CleaningService cleaningService,
   required FileOperationService fileOperationService,
+  required FileSyncService fileSyncService,
   required ThumbnailCacheRepository thumbnailCacheRepository,
   required ThumbnailCacheService thumbnailCacheService,
   required FileIndexService fileIndexService,
@@ -109,12 +140,16 @@ Widget buildApp({
       Provider<HiveService>.value(value: hiveService),
       Provider<FileIndexRepository>.value(value: fileIndexRepository),
       Provider<DirectoryCacheRepository>.value(value: directoryCacheRepository),
+      Provider<FileMetadataRepository>.value(value: fileMetadataRepository),
       Provider<FolderCountRepository>.value(value: folderCountRepository),
       Provider<RecentRepository>.value(value: recentRepository),
       Provider<SavedRepository>.value(value: savedRepository),
       Provider<HiddenRepository>.value(value: hiddenRepository),
+      Provider<FileAccessService>.value(value: fileAccessService),
+      Provider<FileMetadataService>.value(value: fileMetadataService),
       Provider<CleaningService>.value(value: cleaningService),
       Provider<FileOperationService>.value(value: fileOperationService),
+      Provider<FileSyncService>.value(value: fileSyncService),
       Provider<ThumbnailCacheRepository>.value(value: thumbnailCacheRepository),
       Provider<ThumbnailCacheService>.value(value: thumbnailCacheService),
       Provider<FileIndexService>.value(value: fileIndexService),
@@ -130,6 +165,7 @@ Widget buildApp({
               savedRepository: savedRepository,
               hiddenRepository: hiddenRepository,
               cleaningService: cleaningService,
+              fileMetadataService: fileMetadataService,
               fileOperationService: fileOperationService,
               fileIndexService: fileIndexService,
             ),
@@ -145,6 +181,9 @@ Widget buildApp({
         create:
             (_) => Izinler(
               directoryCacheRepository: directoryCacheRepository,
+              fileAccessService: fileAccessService,
+              fileMetadataService: fileMetadataService,
+              fileSyncService: fileSyncService,
               folderCountRepository: folderCountRepository,
               recentRepository: recentRepository,
               savedRepository: savedRepository,

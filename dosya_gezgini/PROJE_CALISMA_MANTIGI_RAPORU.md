@@ -1957,3 +1957,458 @@ Manual refresh is now standardized across the list pages.
 - `Arama` refresh re-runs the active query through `SearchController.refresh()` and rebuilds the first page of results.
 
 Visible cached content stays on screen during refresh while the file system or index is checked in the background.
+
+Bu proje için güncel klasör yapısı ve katman görevleri ayrıca `project_arcithecture.md` dosyasında tutulmaktadır.
+
+## Ek Kontrol: Dosya ve Klasör Erişim Kontrol Sistemi
+
+Task 18 sonrasında klasör okuma akışına erişim doğrulama katmanı eklenmiştir.
+
+Yeni bileşenler:
+
+- `data/models/file_access_result.dart`
+- `data/services/file_access_service.dart`
+
+Temel davranış:
+
+1. `FileTree.loadFolder(...)` gerçek bir klasörü okumadan önce
+   `FileAccessService.validateDirectory(path)` çağırır.
+2. Bu kontrol şu alanları değerlendirir:
+   - path boş/bozuk mu
+   - path gerçekten var mı
+   - klasör mü dosya mı
+   - okunabilir mi
+   - yazılabilir mi
+   - erişim reddedildi mi
+   - symbolic link mi
+   - kontrol ile gerçek okuma arasında silinmiş mi
+3. Sonuç `FileAccessResult` olarak döner.
+4. Sonuç erişime uygun değilse liste boş state'e düşmez; ilgili ekran
+   `ErrorStateWidget` ile anlaşılır hata mesajı gösterir.
+5. `Dosyalar` ekranı root klasör yükleme hatasını `Izinler.rootLoadError`
+   üzerinden izler.
+6. `Klasoricerigisayfasi` klasör açma hatasını `_loadError` üzerinden izler ve
+   erişim sonucuna göre özel mesaj üretir.
+
+Cache ve temizlik davranışı:
+
+- path artık yoksa
+- path artık klasör değilse
+- path bozuk/geçersiz hale geldiyse
+
+ilgili `directory_cache` ve `folder_count_cache` kayıtları temizlenir.
+
+Erişim reddi veya okunamama gibi durumlarda path fiziksel olarak hâlâ var
+olabileceği için cache doğrudan silinmez; ancak kullanıcıya boş liste yerine
+erişim hatası gösterilir.
+
+Loglama:
+
+- erişim doğrulama başarısızlıkları `debugPrint` ile loglanır
+- folder count arka plan işi de erişim kontrolünden geçer; path geçersizse eski
+  count cache'i temizlenir
+
+## Ek Kontrol: Dosya Varlık Senkronizasyon Sistemi
+
+Task 19 sonrasında Hive tabanlı kalıcı listeler ile gerçek dosya sistemi arasında
+tek merkezli bir senkronizasyon katmanı eklenmiştir.
+
+Yeni bileşenler:
+
+- `data/models/file_sync_models.dart`
+- `data/services/file_sync_service.dart`
+
+Temel akış:
+
+1. `FileSyncService` `saved`, `hidden` ve `recent` kayıtlarını tek tek okur.
+2. Her kayıt `FileAccessService` üzerinden doğrulanır.
+3. Path artık yoksa, bozuksa veya beklenen tipten farklıysa kayıt invalid kabul
+   edilir ve ilgili repository'den silinir.
+4. Path fiziksel olarak hâlâ varsa ancak okunamıyorsa kayıt tutulur; böylece
+   kullanıcı öğeyi listede görmeye devam eder ve açma anında erişim hatası alır.
+5. `directory_cache` ve `folder_count_cache` içindeki path'ler de aynı kontrol
+   akışıyla taranır; artık geçerli olmayan klasör cache kayıtları temizlenir.
+6. Senkronizasyon sırasında kalıcı listelerde temizlik yapıldıysa
+   `FileIndexService.refreshIndex(...)` çağrılır; böylece arama ve kategori
+   cache'i de güncel dosya sistemiyle hizalanır.
+
+UI entegrasyonu:
+
+- uygulama ilk izin yüklemesinde `Izinler.requestAllStoragePermission()` içinde
+  senkronizasyon çalışır
+- `Dosyalar`, `Gizlidosyalar`, `Kaydedilendosyalar` ve
+  `Klasoricerigisayfasi` içindeki manuel refresh akışları önce bu senkronizasyonu
+  çalıştırır
+- senkronizasyon bir veya daha fazla kayıt temizlediyse kullanıcıya
+  "bazı kayıtlar artık bulunamadı" bilgisini veren bir `SnackBar` gösterilir
+
+Bu yapı sayesinde `saved`, `hidden`, `recent`, `directory_cache` ve
+`folder_count_cache` kayıtları zamanla dosya sisteminden kopuk hale geldiğinde
+uygulama bunları kontrollü biçimde temizler ve stale path'leri UI içinde
+biriktirmez.
+
+## Ek Kontrol: Güvenli Dosya Operasyonları
+
+Task 20 ile birlikte dosya operasyon servisinin öncesine ve kritik mutation
+anlarına ek güvenlik kontrolleri yerleştirilmiştir.
+
+Güçlendirilen alanlar:
+
+- `FileOperationService`
+- `FileAccessService`
+- `Dosyaislemleri`
+
+Temel davranış:
+
+1. `createFolder`, `renameEntry`, `deleteEntries` ve `pasteEntries` çağrıları
+   işlem başlamadan önce path doğrulaması yapar.
+2. Kaynak path'in gerçekten var olduğu, beklenen tipte olduğu ve erişilebilir
+   olduğu kontrol edilir.
+3. Hedef klasör için yazma erişimi ve klasörün hâlâ mevcut olması kontrol edilir.
+4. Kopyalama ve taşıma öncesinde hedefte aynı isimli öğe varsa kullanıcıdan
+   conflict kararı alınır.
+5. Overwrite seçilirse mevcut hedef doğrudan silinmez; önce geçici bir backup
+   path'e taşınır, yeni kopya doğrulanır, işlem başarılıysa backup temizlenir.
+6. Kopyalama doğrulaması başarısız olursa veya move sırasında kaynak silme adımı
+   hata verirse hedefte oluşturulan yeni kopya silinir ve varsa eski hedef backup'ı
+   geri yüklenir.
+7. `cut` senaryosunda kaynak öğe ancak hedefe kopyalama ve doğrulama başarıyla
+   tamamlandıktan sonra silinir.
+8. Çoklu seçimde parent klasör ile onun altındaki child öğeler birlikte seçilmişse
+   operasyon servisi nested tekrarları filtreler; böylece aynı veriye iki kez
+   kopyala/sil uygulatılmaz.
+
+UI ve senkronizasyon:
+
+- silme işlemi kullanıcı onayı ile başlar
+- overwrite kararı bottom sheet üzerinden alınır
+- güvenlik kontrolü sonucu oluşan hata kodları kullanıcıya lokalize mesaj olarak gösterilir
+- başarılı mutation sonrasında root görünümü, aktif klasör görünümü ve file index
+  senkron biçimde yenilenir
+
+Bu yapı veri kaybı riskini özellikle overwrite, move ve rename akışlarında
+azaltır; işlem ortasında hata oluşsa bile mümkün olan senaryolarda önceki durumun
+geri yüklenmesini hedefler.
+
+## Eklenen Profesyonel Sistemler
+
+Bu bölüm task 1-20 aralığında projeye eklenen profesyonel mimari sistemlerin
+özetidir. Aşağıdaki maddeler teorik hedef değil, mevcut kod tabanında gerçekten
+uygulanan yapıları tarif eder.
+
+### 1. Path Tabanlı Klasör Gezinme Sistemi
+
+Klasör açma akışı artık sadece provider içindeki geçici klasör referansına bağlı
+çalışmaz. Router katmanı hedef klasörü `FolderRouteData` ile taşır; path query
+bilgisi ana kaynak, `extra` ise hızlı metadata desteğidir.
+
+`Klasoricerigisayfasi` açıldıktan sonra kendi lifecycle akışı içinde hedef route
+verisini çözer, sayfayı hemen gösterir, ilk aşamada skeleton render eder ve sonra
+`_loadFolder()` ile gerçek içeriği async yükler. Bu sayede navigasyon ve veri
+yükleme birbirinden ayrılmıştır.
+
+`Izinler.currentFolder` hâlâ görünür klasör, breadcrumb ve operasyon hedefi için
+kullanılır; fakat klasör sayfasının açılma sebebi artık doğrudan route bilgisidir.
+
+### 2. Ortak Skeleton Loading Sistemi
+
+`lib/shared/widgets/` altında ortak loading bileşenleri tanımlanmıştır:
+
+- `AppSkeleton`
+- `FileItemSkeleton`
+- `FolderListSkeleton`
+- `CategoryGridSkeleton`
+- `StorageCardSkeleton`
+
+Bu yapılar `Dosyalar`, `Klasoricerigisayfasi`, `Arama`, `AnasayfaIcerigi`,
+`Menu` ve dosya/klasör item widget'larında tekrar kullanılmaktadır.
+
+Ayrıca boş ve hata durumları için `EmptyStateWidget` ile `ErrorStateWidget`
+ortaklaştırılmıştır. Böylece loading, empty ve error görünümleri ekran bazında
+ayrı ayrı yazılmamaktadır.
+
+### 3. RefreshIndicator ile Manuel Yenileme Sistemi
+
+Elle yenileme davranışı artık tek tip hale getirilmiştir.
+
+- Root dosyalar ekranı `Izinler.refreshRootEntries()` çağırır.
+- Gizli ve kaydedilen listeler kendi repository senkronizasyonlarını yeniden çalıştırır.
+- Klasör sayfası yenilemede önce kalıcı koleksiyon senkronizasyonunu çalıştırır,
+  sonra aktif klasörü veya kategorik içeriği `forceRefresh` ile yeniden yükler.
+- Arama ekranı `SearchController.refresh()` ile aynı query için index üstünden
+  tekrar arama yapar.
+
+Bu yapı sayesinde yenileme sadece görünen listeyi değil; Hive kayıtlarını,
+cache'leri, root state'ini ve gerekli olduğunda index'i de günceller.
+
+### 4. Hive Tabanlı Data Katmanı
+
+`lib/data/` katmanı projeye kalıcı ve ayrışmış bir veri mimarisi kazandırmıştır.
+
+Ana alt katmanlar:
+
+- `constants`
+- `models`
+- `repositories`
+- `services`
+
+Burada `SavedItemModel`, `HiddenItemModel`, `RecentItemModel`,
+`IndexedFileModel`, `FolderCountModel`, `DirectoryCacheModel`,
+`ThumbnailCacheModel`, `FileSyncResult` ve `FileOperationResult` gibi modeller
+bulunur.
+
+Repository katmanı Hive kutularını doğrudan yönetir; UI katmanı artık Hive box
+ismi, map formatı veya serialize detaylarını bilmez. Service katmanı ise cache
+politikası, erişim doğrulama, index oluşturma, thumbnail üretme, temizlik ve
+dosya operasyon kurallarını yönetir.
+
+### 5. File Index ve Category Cache Sistemi
+
+Kategori ekranları artık her açılışta recursive dosya sistemi taraması yapmaz.
+
+`FileIndexService` root altındaki dosyaları Hive içinde indeksler.
+`CategoryRepository` ve `CategoryQueryService` bu index'i kullanarak kategori
+sayfalarını besler. `FileTree` içindeki kategori klasörleri fiziksel dizin değil,
+uzantı gruplarını temsil eden sanal `FolderNode` nesneleridir.
+
+`Klasoricerigisayfasi` sanal klasör açıldığında önce
+`CategoryRepository.ensureCategoryReady(...)` çalıştırır, sonra ilk 100 item'ı
+Hive index'ten alır. Gerekirse arka planda sessiz index refresh de yapılır.
+
+### 6. Debounce ve Index Tabanlı Arama Sistemi
+
+Arama akışı `SearchController` üzerinden yönetilir.
+
+- Minimum query uzunluğu `2` karakterdir.
+- Debounce süresi `400ms`'dir.
+- Sonuçlar doğrudan dosya sistemini recursive gezmek yerine `SearchRepository`
+  üzerinden Hive index içinde aranır.
+- `_searchGeneration` sayacı ile eski sorguların geç gelen sonucu yeni query'nin
+  UI state'ine karışmaz.
+
+Bu sayede her harfte pahalı I/O yapılmaz; arama daha akıcı ve öngörülebilir hale gelir.
+
+### 7. 100'er Item Pagination Sistemi
+
+Listeleme akışları artık ilk açılışta tüm içeriği birden render etmez.
+
+`PaginatedController.pageSize = 100` sabiti root, gizli, kaydedilen ve ana sayfa
+liste akışlarında ortak referanstır. `PaginatedFileListView` ilk 100 öğeyi
+gösterir, scroll alt sınıra indiğinde sonraki pencereyi açar.
+
+Klasör sayfası fiziksel dizinler için kendi `100` item penceresini yönetir.
+Kategori ve arama sonuçları da `100` limit ile ilk sayfayı getirir ve
+`loadMore`/scroll ile devam eder.
+
+Bütçe kuralı nettir: klasörler önce, dosyalar sonra görünür pencereye girer.
+
+### 8. Folder Count Cache Sistemi
+
+Klasör satırlarında görünen öğe sayıları artık yanlışlıkla sabit `0` gösterilmez.
+
+`FolderCountModel` şu alanları taşır:
+
+- `folderCount`
+- `fileCount`
+- `totalCount`
+- `isLoaded`
+- `updatedAt`
+
+`DosyaFolder` widget görünür olduğunda `Izinler.ensureFolderCount(...)`
+çağrılır. Değer hazırsa cache'ten hydrate edilir; hazır değilse kullanıcıya
+belirsiz gösterim verilir. Bu sayede henüz hesaplanmamış sayı ile gerçekten
+`0` olan sayı birbirine karışmaz.
+
+Arka planda queue tabanlı count hesaplama vardır ve aynı anda sınırlı sayıda iş
+çalıştırılır.
+
+### 9. Directory Cache Sistemi
+
+Klasör içeriği açılışları için `directory_cache` katmanı eklenmiştir.
+
+`FileTree.loadFolder(...)` önce `DirectoryCacheRepository` üzerinden saklanmış
+snapshot'ı okumayı dener. Geçerli cache varsa içerik hızlıca hydrate edilir,
+ardından yaş, `directoryModifiedAt` ve refresh isteğine göre gerçek dosya sistemi
+kontrolü yapılır.
+
+Cache artık sadece hız katmanı değildir; invalid path bulunduğunda veya klasör
+silindiğinde temizlenir. Manuel refresh geldiğinde `forceRefresh` ile gerçek içerik
+yeniden okunur ama görünür pencere korunur.
+
+### 10. Thumbnail Cache Sistemi
+
+Dosya önizlemeleri widget içinde rastgele ve tekrar tekrar üretilmez.
+
+`ThumbnailCacheService` thumbnail metadata'sını Hive içinde, üretilen thumbnail
+dosyalarını ise uygulamanın cache dizininde yönetir. Aynı source path için tek
+üretim işi çalışır ve üretim eşzamanlılığı sınırlanır.
+
+`Dosya` widget cache-first yaklaşım izler:
+
+- geçerli thumbnail metadata varsa hazır dosya okunur
+- yoksa fallback ikon gösterilir
+- üretim arka planda servis üzerinden yapılır
+- sonuç sadece ilgili item yeniden çizilerek ekrana yansır
+
+### 11. Güvenli Dosya Operasyonları
+
+Kopyala, kes, yapıştır, sil, klasör oluştur ve yeniden adlandır operasyonları
+`Dosyaislemleri` ile `FileOperationService` arasındaki ayrık mimariyle yürür.
+
+Servis katmanı artık şunları yapar:
+
+- operasyon öncesi kaynak ve hedef path doğrulaması
+- hedef klasör var mı ve yazılabilir mi kontrolü
+- isim çakışması çözümü
+- boş alan kontrolü
+- move sırasında kopya doğrulaması tamamlanmadan source silmeme
+- overwrite sırasında backup-then-replace yaklaşımı
+- hata halinde rollback denemesi
+
+UI tarafında progress dialog, conflict bottom sheet ve lokalize hata mesajları
+kullanılır. Mutation sonrası root, aktif klasör, kalıcı koleksiyonlar ve file
+index birlikte yenilenir.
+
+### 12. Erişim, Senkronizasyon ve Cache Geçerlilik Kontrolleri
+
+Bu proje artık dosya erişimini, stale kayıt temizliğini ve cache geçerliliğini
+ayrı kontrollerle yönetir.
+
+`FileAccessService` path'in varlığını, tipini, okunabilirliğini, yazılabilirliğini
+ve symbolic link olup olmadığını doğrular.
+
+`FileSyncService` ise:
+
+- `saved`
+- `hidden`
+- `recent`
+- `directory_cache`
+- `folder_count_cache`
+
+kayıtlarını gerçek dosya sistemiyle hizalar, invalid path'leri temizler ve
+gerekirse file index refresh tetikler.
+
+Buna ek olarak directory cache, folder count cache ve thumbnail metadata cache
+katmanları kendi `updatedAt`/dosya durumu mantıklarıyla yeniden doğrulanır.
+Kullanıcıya boş veya yanlış içerik göstermek yerine error state, fallback ikon
+veya bilgilendirici snackbar tercih edilir.
+
+### 13. Selector ile Rebuild Optimizasyonu
+
+Rebuild alanları daraltmak için provider tüketimi geniş `watch` yerine çoğunlukla
+`Selector` ile yapılır.
+
+Örnek kullanım alanları:
+
+- `Dosyalar` ve `AnasayfaIcerigi` içinde izin durumu ve root entry seçimi
+- `Gizlidosyalar` ve `Kaydedilendosyalar` içinde sadece ilgili `FolderFileEntries`
+  parçasını dinleme
+- `Altislemprovider` ile seçim modu aç/kapa durumunu ayrı izleme
+- `Dosyaislemleri` üzerinden item bazlı seçili olma durumunu ayrı izleme
+
+Bu sayede permission, seçim modu, klasör içeriği, dosya satırı ve action bar gibi
+parçalar birbirini gereksiz yere yeniden çizmez; büyük liste ekranlarında scroll
+ve etkileşim maliyeti azalır.
+
+## Dosya Metadata Cache Davranışı
+
+Bu ek bölüm 6.7 `FileTree`, 7.1 `Dosyalar`, 7.2 `Klasoricerigisayfasi`, 9. Dosya Container akışı,
+10. Path mantığı, 13. Gizli/Kaydedilenler ve 14. Son Gezilenler bölümlerine ait güncel dosya metadata
+cache davranışını tek yerde toplar.
+
+Temel bileşenler:
+
+- `lib/data/models/file_metadata_model.dart`
+- `lib/data/repositories/file_metadata_repository.dart`
+- `lib/data/services/file_metadata_service.dart`
+- `lib/core/utils/file_formatters.dart`
+- Hive kutusu: `file_metadata_cache`
+
+### 6.7 `FileTree` için ek not
+
+- `FileTree.loadFolder(...)` gerçek dosya listesini çıkardıktan sonra `FileMetadataService.primeFiles(...)` çağırır.
+- Eğer klasör `directory_cache_box` içinden hydrate edildiyse dosya path listesi için metadata cache de önceden yüklenebilir.
+- Böylece `FolderCountModel` klasör item'larını nasıl hızlandırıyorsa, `FileMetadataModel` de dosya item alt bilgisini hızlandırır.
+
+### 7.1 `Dosyalar` sayfası için ek not
+
+- Root listede görünen dosyalar `PaginatedFileListView` üzerinden metadata prime eder.
+- Metadata cache varsa dosya alt satırı ilk çizimde dolu gelir.
+- Cache yoksa dosya item kısa placeholder (`— | —`) gösterir ve arka planda gerçek metadata okunur.
+
+### 7.2 `Klasoricerigisayfasi` için ek not
+
+- Normal klasör listesinde dosya satırları `uygun boyut | son düzenlenme tarihi` formatını kullanır.
+- `RefreshIndicator` tetiklendiğinde `forceRefresh: true` ile dosya metadata bilgisi de yeniden üretilir.
+- Bu yenileme item bazlı listenable akışla çalıştığı için tüm liste gereksiz yere yeniden kurulmaz.
+
+### 9. Dosya Container'ına Tıklanınca oluşan metadata davranışı
+
+- `Dosya` widget'ı artık doğrudan `FileStat` okuyup subtitle üretmez.
+- Widget, `FileMetadataService.listenableFor(path)` ile ilgili path'i dinler.
+- Cache'ten gelen değer varsa hemen gösterir.
+- Değer yoksa veya sadece index seed'i varsa servis arka planda gerçek `FileStat.stat(path)` çağrısı yapar.
+- Sonuç geldiğinde sadece ilgili `Dosya` item'ı yeniden çizilir.
+
+### 10. Path ve cache key mantığı
+
+- `file_metadata_cache` içinde key her zaman dosya `path` değeridir.
+- Aynı path tekrar yazıldığında duplicate oluşmaz, overwrite yapılır.
+- Path artık yoksa veya klasöre dönüşmüşse metadata kaydı temizlenir.
+- Bu yüzden root, klasör içeriği, recent, saved, hidden, search ve category ekranları aynı path için ortak metadata kaydını paylaşır.
+
+### 13. Gizli Dosyalar ve Kaydedilen Dosyalar için ek not
+
+- Bu ekranlar dosya item'ı çizerken yine ortak `Dosya` widget'ını kullanır.
+- Dolayısıyla `file_metadata_cache` burada da tekrar kullanılabilir.
+- Silinmiş veya tip değiştirmiş path'ler `FileSyncService` tarafından prune edildiği için stale metadata ekranda tutulmaz.
+
+### 14. Son Gezilenler için ek not
+
+- Recent listesi dosya metadata'sını ayrı bir yerde tutmaz; path bazlı ortak cache'i kullanır.
+- Kullanıcı aynı dosyayı root, klasör içeriği ve recent içinde tekrar gördüğünde metadata yeniden hesaplanmak zorunda kalmaz.
+
+### Gerçek metadata nasıl okunuyor?
+
+Ana doğruluk kaynağı gerçek dosya sistemidir:
+
+- `FileStat.stat(path)` ile `sizeBytes` okunur
+- Aynı `FileStat` nesnesinden `modifiedAt` alınır
+- Sonuç `FileMetadataModel` içine yazılır
+- Ardından `FileMetadataRepository` üzerinden `file_metadata_cache` kutusuna overwrite edilir
+
+### Cache varsa / yoksa davranış
+
+- Cache varsa UI hızlı hydrate olur.
+- Cache yoksa arka planda gerçek metadata üretilir.
+- Force refresh gelirse cache yok sayılmaz; önce mevcut değer gösterilebilir, sonra gerçek `FileStat` sonucu ile kayıt güncellenir.
+- Aynı path için aynı anda birden fazla metadata işi başlatılmaz; servis bounded concurrency kullanır.
+
+### Dosya operasyonlarından sonra sync
+
+- Delete -> silinen dosya metadata kaydı temizlenir.
+- Rename -> eski file path metadata'sı silinir, yeni path için metadata üretilir.
+- Copy / paste -> hedef file path için metadata oluşturulur.
+- Move / cut-paste -> eski path metadata'sı silinir, yeni hedef path metadata'sı oluşturulur.
+- Cleanup -> temizlenen dosyalar için metadata kaydı da silinir.
+- Refresh -> görünen dosyaların metadata bilgisi force refresh ile yenilenir.
+
+### UI formatı
+
+Dosya item'larında alt bilgi satırı şu formatta gösterilir:
+
+`uygun boyut | son düzenlenme tarihi`
+
+Örnekler:
+
+- `2.35 GB | 06.06.2026 15:10`
+- `850.42 MB | 06.06.2026 15:10`
+- `240.18 KB | 06.06.2026 15:10`
+- `512 Byte | 06.06.2026 15:10`
+
+Boyut seçimi kuralı:
+
+- `1 GB ve üzeri -> GB`
+- `1 MB - 1 GB arası -> MB`
+- `1 KB - 1 MB arası -> KB`
+- `1 KB altı -> Byte`

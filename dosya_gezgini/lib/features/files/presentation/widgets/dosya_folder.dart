@@ -3,6 +3,9 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:dosya_gezgini/app/router/app_router.dart';
+import 'package:dosya_gezgini/core/utils/file_formatters.dart';
+import 'package:dosya_gezgini/data/models/file_metadata_model.dart';
+import 'package:dosya_gezgini/data/services/file_metadata_service.dart';
 import 'package:dosya_gezgini/data/services/thumbnail_cache_service.dart';
 import 'package:dosya_gezgini/features/files/presentation/models/folder_route_data.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
@@ -10,6 +13,7 @@ import 'package:dosya_gezgini/features/files/state/dosyaislemleri.dart';
 import 'package:dosya_gezgini/features/files/state/folderleragaci.dart';
 import 'package:dosya_gezgini/features/files/state/izinler.dart';
 import 'package:dosya_gezgini/shared/widgets/app_skeleton.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -215,9 +219,14 @@ class _KlasorState extends State<Klasor> with AutomaticKeepAliveClientMixin {
 }
 
 class Dosya extends StatefulWidget {
-  const Dosya({super.key, required this.file});
+  const Dosya({
+    super.key,
+    required this.file,
+    this.initialMetadata,
+  });
 
   final File file;
+  final FileMetadataModel? initialMetadata;
 
   @override
   State<Dosya> createState() => _DosyaState();
@@ -244,27 +253,30 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
     '.3gp',
   };
 
-  late List<String> dosyabilgisi = [];
+  FileMetadataService? _fileMetadataService;
+  ValueListenable<FileMetadataModel?>? _metadataListenable;
+  bool _metadataPrimeQueued = false;
   ThumbnailCacheService? _thumbnailCacheService;
   ValueNotifier<String?>? _thumbnailPathListenable;
   Timer? _deferredThumbnailTimer;
   bool _thumbnailPrimeQueued = false;
 
   @override
-  void initState() {
-    super.initState();
-    bilgileriaktar();
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final metadataService = context.read<FileMetadataService>();
+    if (!identical(metadataService, _fileMetadataService)) {
+      _fileMetadataService = metadataService;
+      _bindMetadataListenable();
+    }
+
     final service = context.read<ThumbnailCacheService>();
     if (!identical(service, _thumbnailCacheService)) {
       _thumbnailCacheService = service;
       _bindThumbnailListenable();
     }
 
+    _scheduleMetadataPrime();
     _scheduleThumbnailPrime();
   }
 
@@ -272,25 +284,17 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
   void didUpdateWidget(covariant Dosya oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.file.path == widget.file.path) {
+      if (oldWidget.initialMetadata != widget.initialMetadata) {
+        _scheduleMetadataPrime();
+      }
       return;
     }
 
-    bilgileriaktar();
     _deferredThumbnailTimer?.cancel();
+    _bindMetadataListenable();
     _bindThumbnailListenable();
+    _scheduleMetadataPrime();
     _scheduleThumbnailPrime();
-  }
-
-  void bilgileriaktar() async {
-    dosyabilgisi = await dosyabilgileri(widget.file.path);
-  }
-
-  Future<List<String>> dosyabilgileri(String dosyayolu) async {
-    final stat = await FileStat.stat(dosyayolu);
-    return [
-      (stat.size / (1024 * 1024 * 1024)).toString(),
-      stat.modified.toString(),
-    ];
   }
 
   @override
@@ -307,6 +311,47 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
   bool get _isImageFile => _imageExtensions.contains(_dosyaUzantisi);
   bool get _isVideoFile => _videoExtensions.contains(_dosyaUzantisi);
   bool get _supportsThumbnail => _isImageFile || _isVideoFile;
+
+  void _bindMetadataListenable() {
+    final service = _fileMetadataService;
+    if (service == null) {
+      _metadataListenable = null;
+      return;
+    }
+
+    _metadataListenable = service.listenableFor(widget.file.path);
+  }
+
+  void _scheduleMetadataPrime() {
+    if (_metadataPrimeQueued) {
+      return;
+    }
+
+    final service = _fileMetadataService;
+    if (service == null) {
+      return;
+    }
+
+    final currentMetadata = service.currentMetadata(widget.file.path);
+    if (currentMetadata != null && widget.initialMetadata == null) {
+      return;
+    }
+
+    _metadataPrimeQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _metadataPrimeQueued = false;
+      if (!mounted) {
+        return;
+      }
+
+      unawaited(
+        service.prime(
+          widget.file,
+          fallbackModel: widget.initialMetadata,
+        ),
+      );
+    });
+  }
 
   void _bindThumbnailListenable() {
     final service = _thumbnailCacheService;
@@ -465,7 +510,7 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
                                       : pathinfo.basename(widget.file.path),
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 ),
-                                const Text(' GB | '),
+                                _buildMetadataSubtitle(context),
                               ],
                             ),
                           ),
@@ -504,6 +549,33 @@ class _DosyaState extends State<Dosya> with AutomaticKeepAliveClientMixin {
     }
 
     return _buildVarsayilanIkon(dosyauzantisi);
+  }
+
+  Widget _buildMetadataSubtitle(BuildContext context) {
+    final metadataListenable = _metadataListenable;
+    if (metadataListenable == null) {
+      return const Text(unknownFileMetadataPlaceholder);
+    }
+
+    return ValueListenableBuilder<FileMetadataModel?>(
+      valueListenable: metadataListenable,
+      builder: (context, metadata, _) {
+        final resolvedMetadata = metadata ?? widget.initialMetadata;
+        final subtitle =
+            resolvedMetadata == null
+                ? unknownFileMetadataPlaceholder
+                : formatFileSubtitle(
+                  sizeBytes: resolvedMetadata.sizeBytes,
+                  modifiedAt: resolvedMetadata.modifiedAt,
+                );
+        return Text(
+          subtitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodyMedium,
+        );
+      },
+    );
   }
 
   Widget _buildThumbnailOnizleme({

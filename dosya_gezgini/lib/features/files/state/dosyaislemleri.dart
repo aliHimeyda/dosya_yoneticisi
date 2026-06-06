@@ -10,6 +10,7 @@ import 'package:dosya_gezgini/data/repositories/hidden_repository.dart';
 import 'package:dosya_gezgini/data/repositories/saved_repository.dart';
 import 'package:dosya_gezgini/data/services/cleaning_service.dart';
 import 'package:dosya_gezgini/data/services/file_index_service.dart';
+import 'package:dosya_gezgini/data/services/file_metadata_service.dart';
 import 'package:dosya_gezgini/data/services/file_operation_service.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/folderleragaci.dart';
@@ -22,21 +23,29 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 class Dosyaislemleri extends ChangeNotifier {
+  static const Duration _minimumProgressOverlayDuration = Duration(
+    milliseconds: 350,
+  );
+  static const int _postMutationProgressStageCount = 2;
+
   Dosyaislemleri({
     required SavedRepository savedRepository,
     required HiddenRepository hiddenRepository,
     required CleaningService cleaningService,
+    required FileMetadataService fileMetadataService,
     required FileOperationService fileOperationService,
     required FileIndexService fileIndexService,
   }) : _savedRepository = savedRepository,
        _hiddenRepository = hiddenRepository,
        _cleaningService = cleaningService,
+       _fileMetadataService = fileMetadataService,
        _fileOperationService = fileOperationService,
        _fileIndexService = fileIndexService;
 
   final SavedRepository _savedRepository;
   final HiddenRepository _hiddenRepository;
   final CleaningService _cleaningService;
+  final FileMetadataService _fileMetadataService;
   final FileOperationService _fileOperationService;
   final FileIndexService _fileIndexService;
 
@@ -354,28 +363,41 @@ class Dosyaislemleri extends ChangeNotifier {
     final theme = Theme.of(context);
     final izinler = context.read<Izinler>();
     final altIslemProvider = context.read<Altislemprovider>();
+    final totalProgressItems = _resolveLifecycleProgressTotal(entries.length);
+    var completedOperationItems = 0;
 
     final result = await _runOperationWithProgress<FileOperationResult>(
       context: context,
-      title: l10n.operationDeleting,
+      title: l10n.operationDeletingProgress,
       operationType: FileOperationType.delete,
-      totalItems: entries.length,
-      showProgress: _shouldShowProgress(entries),
-      task:
-          () => _fileOperationService.deleteEntries(
-            entries,
-            onProgress: _setOperationProgress,
-          ),
+      totalItems: totalProgressItems,
+      showProgress: true,
+      task: () async {
+        final result = await _fileOperationService.deleteEntries(
+          entries,
+          onProgress: (progress) {
+            completedOperationItems = progress.processedItems;
+            _setOperationProgress(
+              _bindProgressToLifecycleTotal(progress, totalProgressItems),
+            );
+          },
+        );
+        await _refreshAfterFilesystemMutation(
+          izinler: izinler,
+          l10n: l10n,
+          operationType: FileOperationType.delete,
+          completedItems: completedOperationItems,
+          totalItems: totalProgressItems,
+          persistentPathsToRemove: result.removedPaths.toSet(),
+          metadataDeletePaths: result.removedPaths.toSet(),
+        );
+        return result;
+      },
     );
 
     if (result.cancelled) {
       return;
     }
-
-    await _refreshAfterFilesystemMutation(
-      izinler: izinler,
-      removedPaths: result.removedPaths.toSet(),
-    );
     clearSelection(notify: false);
     altIslemProvider.setSelectionMode(false);
     notifyListeners();
@@ -389,6 +411,7 @@ class Dosyaislemleri extends ChangeNotifier {
       ),
       theme: theme,
     );
+    await _refreshVisibleContentAfterToast(izinler: izinler);
   }
 
   Future<void> dosyalaripaylas() async {
@@ -447,9 +470,47 @@ class Dosyaislemleri extends ChangeNotifier {
       return;
     }
 
-    final result = await _fileOperationService.createFolder(
-      parentDirectoryPath: targetDirectoryPath,
-      folderName: klasoradi,
+    final totalProgressItems = _resolveLifecycleProgressTotal(1);
+
+    final result = await _runOperationWithProgress<FileCreateResult>(
+      context: context,
+      title: l10n.operationCreatingFolderProgress,
+      operationType: FileOperationType.createFolder,
+      totalItems: totalProgressItems,
+      showProgress: true,
+      task: () async {
+        final targetPath = path.join(targetDirectoryPath, klasoradi.trim());
+        _setOperationProgress(
+          FileOperationProgress(
+            operationType: FileOperationType.createFolder,
+            processedItems: 0,
+            totalItems: totalProgressItems,
+            currentPath: targetPath,
+          ),
+        );
+        final result = await _fileOperationService.createFolder(
+          parentDirectoryPath: targetDirectoryPath,
+          folderName: klasoradi,
+        );
+        _setOperationProgress(
+          FileOperationProgress(
+            operationType: FileOperationType.createFolder,
+            processedItems: 1,
+            totalItems: totalProgressItems,
+            currentPath: result.createdPath ?? targetPath,
+          ),
+        );
+        if (result.isSuccess) {
+          await _refreshAfterFilesystemMutation(
+            izinler: izinler,
+            l10n: l10n,
+            operationType: FileOperationType.createFolder,
+            completedItems: 1,
+            totalItems: totalProgressItems,
+          );
+        }
+        return result;
+      },
     );
 
     if (!result.isSuccess) {
@@ -459,9 +520,8 @@ class Dosyaislemleri extends ChangeNotifier {
       );
       return;
     }
-
-    await _refreshAfterFilesystemMutation(izinler: izinler);
     _showToast(message: l10n.newFolderCreated, theme: theme);
+    await _refreshVisibleContentAfterToast(izinler: izinler);
   }
 
   Future<void> fileekle(File file, BuildContext context) async {
@@ -474,22 +534,44 @@ class Dosyaislemleri extends ChangeNotifier {
       return;
     }
 
+    final totalProgressItems = _resolveLifecycleProgressTotal(1);
+    var completedOperationItems = 0;
+
     final result = await _runOperationWithProgress<FileOperationResult>(
       context: context,
-      title: l10n.operationCopying,
+      title: l10n.operationCopyingProgress,
       operationType: FileOperationType.copy,
-      totalItems: 1,
-      showProgress: false,
-      task:
-          () => _fileOperationService.pasteEntries(
-            entries: <FileOperationEntry>[
-              FileOperationEntry(path: file.path, isDirectory: false),
-            ],
-            mode: ClipboardOperation.copy,
-            destinationDirectoryPath: targetDirectoryPath,
-            onConflict: (request) => _resolveConflict(context, request),
-            onProgress: _setOperationProgress,
-          ),
+      totalItems: totalProgressItems,
+      showProgress: true,
+      task: () async {
+        final result = await _fileOperationService.pasteEntries(
+          entries: <FileOperationEntry>[
+            FileOperationEntry(path: file.path, isDirectory: false),
+          ],
+          mode: ClipboardOperation.copy,
+          destinationDirectoryPath: targetDirectoryPath,
+          onConflict: (request) => _resolveConflict(context, request),
+          onProgress: (progress) {
+            completedOperationItems = progress.processedItems;
+            _setOperationProgress(
+              _bindProgressToLifecycleTotal(progress, totalProgressItems),
+            );
+          },
+        );
+        if (result.hasChanges) {
+          await _refreshAfterFilesystemMutation(
+            izinler: izinler,
+            l10n: l10n,
+            operationType: FileOperationType.copy,
+            completedItems: completedOperationItems,
+            totalItems: totalProgressItems,
+            persistentPathsToRemove: result.removedPaths.toSet(),
+            metadataDeletePaths: result.removedPaths.toSet(),
+            metadataRefreshPaths: result.createdPaths.toSet(),
+          );
+        }
+        return result;
+      },
     );
 
     if (!result.hasChanges) {
@@ -504,12 +586,8 @@ class Dosyaislemleri extends ChangeNotifier {
       );
       return;
     }
-
-    await _refreshAfterFilesystemMutation(
-      izinler: izinler,
-      removedPaths: result.removedPaths.toSet(),
-    );
     _showToast(message: l10n.newFileAdded, theme: theme);
+    await _refreshVisibleContentAfterToast(izinler: izinler);
   }
 
   Future<void> adlandir(
@@ -521,9 +599,51 @@ class Dosyaislemleri extends ChangeNotifier {
     final theme = Theme.of(context);
     final izinler = context.read<Izinler>();
 
-    final result = await _fileOperationService.renameEntry(
-      sourcePath: oldPath,
-      newName: newName,
+    final result = await _runOperationWithProgress<FileRenameResult>(
+      context: context,
+      title: l10n.operationRenamingProgress,
+      operationType: FileOperationType.rename,
+      totalItems: _resolveLifecycleProgressTotal(1),
+      showProgress: true,
+      task: () async {
+        final totalProgressItems = _resolveLifecycleProgressTotal(1);
+        _setOperationProgress(
+          FileOperationProgress(
+            operationType: FileOperationType.rename,
+            processedItems: 0,
+            totalItems: totalProgressItems,
+            currentPath: oldPath,
+          ),
+        );
+        final result = await _fileOperationService.renameEntry(
+          sourcePath: oldPath,
+          newName: newName,
+        );
+        _setOperationProgress(
+          FileOperationProgress(
+            operationType: FileOperationType.rename,
+            processedItems: 1,
+            totalItems: totalProgressItems,
+            currentPath: result.newPath ?? oldPath,
+          ),
+        );
+        if (result.isSuccess) {
+          await _refreshAfterFilesystemMutation(
+            izinler: izinler,
+            l10n: l10n,
+            operationType: FileOperationType.rename,
+            completedItems: 1,
+            totalItems: totalProgressItems,
+            metadataDeletePaths:
+                result.isDirectory ? const <String>{} : <String>{oldPath},
+            metadataRefreshPaths:
+                result.isDirectory || result.newPath == null
+                    ? const <String>{}
+                    : <String>{result.newPath!},
+          );
+        }
+        return result;
+      },
     );
 
     if (!result.isSuccess || result.newPath == null) {
@@ -544,10 +664,10 @@ class Dosyaislemleri extends ChangeNotifier {
       newPath: result.newPath!,
       isDirectory: result.isDirectory,
     );
-    await _refreshAfterFilesystemMutation(izinler: izinler);
     notifyListeners();
 
     _showToast(message: l10n.renameSuccess, theme: theme);
+    await _refreshVisibleContentAfterToast(izinler: izinler);
   }
 
   Future<void> kaydet(BuildContext context) async {
@@ -626,26 +746,51 @@ class Dosyaislemleri extends ChangeNotifier {
       return;
     }
 
+    final totalProgressItems = _resolveLifecycleProgressTotal(entries.length);
+    var completedOperationItems = 0;
+
     final result = await _runOperationWithProgress<FileOperationResult>(
       context: context,
       title:
           mode == ClipboardOperation.cut
-              ? l10n.operationMoving
-              : l10n.operationCopying,
+              ? l10n.operationMovingProgress
+              : l10n.operationCopyingProgress,
       operationType:
           mode == ClipboardOperation.cut
               ? FileOperationType.move
               : FileOperationType.copy,
-      totalItems: entries.length,
-      showProgress: _shouldShowProgress(entries),
-      task:
-          () => _fileOperationService.pasteEntries(
-            entries: entries,
-            mode: mode,
-            destinationDirectoryPath: targetDirectoryPath,
-            onConflict: (request) => _resolveConflict(context, request),
-            onProgress: _setOperationProgress,
-          ),
+      totalItems: totalProgressItems,
+      showProgress: true,
+      task: () async {
+        final result = await _fileOperationService.pasteEntries(
+          entries: entries,
+          mode: mode,
+          destinationDirectoryPath: targetDirectoryPath,
+          onConflict: (request) => _resolveConflict(context, request),
+          onProgress: (progress) {
+            completedOperationItems = progress.processedItems;
+            _setOperationProgress(
+              _bindProgressToLifecycleTotal(progress, totalProgressItems),
+            );
+          },
+        );
+        if (!result.cancelled) {
+          await _refreshAfterFilesystemMutation(
+            izinler: izinler,
+            l10n: l10n,
+            operationType:
+                mode == ClipboardOperation.cut
+                    ? FileOperationType.move
+                    : FileOperationType.copy,
+            completedItems: completedOperationItems,
+            totalItems: totalProgressItems,
+            persistentPathsToRemove: result.removedPaths.toSet(),
+            metadataDeletePaths: result.removedPaths.toSet(),
+            metadataRefreshPaths: result.createdPaths.toSet(),
+          );
+        }
+        return result;
+      },
     );
 
     if (result.cancelled) {
@@ -658,11 +803,6 @@ class Dosyaislemleri extends ChangeNotifier {
         _clipboardOperation = null;
       }
     }
-
-    await _refreshAfterFilesystemMutation(
-      izinler: izinler,
-      removedPaths: result.removedPaths.toSet(),
-    );
     notifyListeners();
 
     _showToast(
@@ -674,6 +814,7 @@ class Dosyaislemleri extends ChangeNotifier {
       ),
       theme: theme,
     );
+    await _refreshVisibleContentAfterToast(izinler: izinler);
   }
 
   List<FileOperationEntry> get _selectedEntries {
@@ -770,14 +911,70 @@ class Dosyaislemleri extends ChangeNotifier {
     return currentFolder.path;
   }
 
+  int _resolveLifecycleProgressTotal(int operationItems) {
+    return operationItems + _postMutationProgressStageCount;
+  }
+
+  FileOperationProgress _bindProgressToLifecycleTotal(
+    FileOperationProgress progress,
+    int totalItems,
+  ) {
+    return progress.copyWith(totalItems: totalItems);
+  }
+
   Future<void> _refreshAfterFilesystemMutation({
     required Izinler izinler,
-    Set<String> removedPaths = const <String>{},
+    required AppLocalizations l10n,
+    required FileOperationType operationType,
+    required int completedItems,
+    required int totalItems,
+    Set<String> persistentPathsToRemove = const <String>{},
+    Set<String> metadataDeletePaths = const <String>{},
+    Set<String> metadataRefreshPaths = const <String>{},
   }) async {
-    if (removedPaths.isNotEmpty) {
-      await izinler.removePathsFromPersistentCollections(removedPaths);
-    }
+    var stageCompletedItems = completedItems;
 
+    stageCompletedItems = await _runProgressStage(
+      operationType: operationType,
+      completedItems: stageCompletedItems,
+      totalItems: totalItems,
+      statusLabel: l10n.operationSyncingRecordsProgress,
+      action: () async {
+        if (persistentPathsToRemove.isNotEmpty) {
+          await izinler.removePathsFromPersistentCollections(
+            persistentPathsToRemove,
+          );
+        }
+        if (metadataDeletePaths.isNotEmpty) {
+          await _fileMetadataService.deleteMetadataForPaths(
+            metadataDeletePaths,
+          );
+        }
+        if (metadataRefreshPaths.isNotEmpty) {
+          await _fileMetadataService.refreshMetadataForPaths(
+            metadataRefreshPaths,
+          );
+        }
+      },
+    );
+
+    await _runProgressStage(
+      operationType: operationType,
+      completedItems: stageCompletedItems,
+      totalItems: totalItems,
+      currentPath: izinler.fileTree.rootPath,
+      statusLabel: l10n.operationRefreshingIndexProgress,
+      action:
+          () => _fileIndexService.refreshIndex(
+            rootPath: izinler.fileTree.rootPath,
+          ),
+    );
+  }
+
+  Future<void> _refreshVisibleContentAfterToast({
+    required Izinler izinler,
+  }) async {
+    await WidgetsBinding.instance.endOfFrame;
     await izinler.refreshRootEntries();
 
     final currentFolder = izinler.currentFolder;
@@ -785,14 +982,37 @@ class Dosyaislemleri extends ChangeNotifier {
       await izinler.fileTree.loadFolder(currentFolder, forceRefresh: true);
       izinler.setVisibleFolder(currentFolder);
     }
-
-    unawaited(
-      _fileIndexService.refreshIndex(rootPath: izinler.fileTree.rootPath),
-    );
   }
 
-  bool _shouldShowProgress(List<FileOperationEntry> entries) {
-    return entries.length > 1 || entries.any((entry) => entry.isDirectory);
+  Future<int> _runProgressStage({
+    required FileOperationType operationType,
+    required int completedItems,
+    required int totalItems,
+    required String statusLabel,
+    String? currentPath,
+    required Future<void> Function() action,
+  }) async {
+    _setOperationProgress(
+      FileOperationProgress(
+        operationType: operationType,
+        processedItems: completedItems,
+        totalItems: totalItems,
+        currentPath: currentPath,
+        statusLabel: statusLabel,
+      ),
+    );
+    await action();
+    final nextCompletedItems = completedItems + 1;
+    _setOperationProgress(
+      FileOperationProgress(
+        operationType: operationType,
+        processedItems: nextCompletedItems,
+        totalItems: totalItems,
+        currentPath: currentPath,
+        statusLabel: statusLabel,
+      ),
+    );
+    return nextCompletedItems;
   }
 
   Future<T> _runOperationWithProgress<T>({
@@ -816,8 +1036,10 @@ class Dosyaislemleri extends ChangeNotifier {
         showProgress ? Navigator.of(context, rootNavigator: true) : null;
     var overlayVisible = false;
     Future<void>? overlayFuture;
+    Stopwatch? overlayStopwatch;
 
     if (showProgress) {
+      overlayStopwatch = Stopwatch()..start();
       overlayVisible = true;
       overlayFuture = showDialog<void>(
         context: context,
@@ -826,7 +1048,7 @@ class Dosyaislemleri extends ChangeNotifier {
       ).whenComplete(() {
         overlayVisible = false;
       });
-      await Future<void>.delayed(Duration.zero);
+      await WidgetsBinding.instance.endOfFrame;
     }
 
     try {
@@ -838,6 +1060,11 @@ class Dosyaislemleri extends ChangeNotifier {
       notifyListeners();
 
       if (overlayVisible && navigator != null && navigator.mounted) {
+        final elapsed = overlayStopwatch?.elapsed ?? Duration.zero;
+        final remaining = _minimumProgressOverlayDuration - elapsed;
+        if (remaining > Duration.zero) {
+          await Future<void>.delayed(remaining);
+        }
         navigator.pop();
         await overlayFuture;
       }
@@ -941,13 +1168,29 @@ class Dosyaislemleri extends ChangeNotifier {
 
   String _messageForErrorCode(AppLocalizations l10n, String? errorCode) {
     switch (errorCode) {
+      case FileOperationErrorCodes.accessDenied:
+        return l10n.fileAccessPermissionDenied;
+      case FileOperationErrorCodes.invalidPath:
+        return l10n.fileAccessInvalidPath;
       case FileOperationErrorCodes.invalidName:
         return l10n.invalidName;
       case FileOperationErrorCodes.alreadyExists:
       case FileOperationErrorCodes.conflict:
         return l10n.itemAlreadyExists;
+      case FileOperationErrorCodes.parentNotFound:
+        return l10n.targetFolderNotFound;
+      case FileOperationErrorCodes.sourceNotFound:
+        return l10n.fileAccessDeleted;
+      case FileOperationErrorCodes.destinationInSource:
+        return l10n.destinationInsideSource;
       case FileOperationErrorCodes.insufficientSpace:
         return l10n.insufficientStorageSpace;
+      case FileOperationErrorCodes.symbolicLinkUnsupported:
+        return l10n.fileAccessSymbolicLinkUnsupported;
+      case FileOperationErrorCodes.rolledBack:
+        return l10n.operationRolledBack;
+      case FileOperationErrorCodes.rollbackFailed:
+        return l10n.operationRollbackFailed;
       default:
         return l10n.errorOccurred;
     }
@@ -973,41 +1216,74 @@ class _FileOperationProgressDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return PopScope(
       canPop: false,
-      child: AlertDialog(
-        title: Text(
-          owner.activeOperationTitle ?? context.l10n.operationCompleted,
-        ),
-        content: ListenableBuilder(
-          listenable: owner,
-          builder: (context, _) {
-            final progress = owner.activeOperationProgress;
-            final currentLabel =
-                progress?.currentPath == null
-                    ? null
-                    : path.basename(progress!.currentPath!);
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Card(
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: ListenableBuilder(
+              listenable: owner,
+              builder: (context, _) {
+                final progress = owner.activeOperationProgress;
+                final statusLabel = progress?.statusLabel;
+                final currentLabel =
+                    progress?.currentPath == null
+                        ? null
+                        : path.basename(progress!.currentPath!);
 
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                LinearProgressIndicator(value: progress?.progress),
-                const SizedBox(height: 12),
-                Text(
-                  '${progress?.processedItems ?? 0}/${progress?.totalItems ?? 0}',
-                ),
-                if (currentLabel != null && currentLabel.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    currentLabel,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
-            );
-          },
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      owner.activeOperationTitle ??
+                          context.l10n.operationCompleted,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    LinearProgressIndicator(
+                      value: progress?.progress,
+                      minHeight: 8,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${progress?.processedItems ?? 0}/${progress?.totalItems ?? 0}',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    if (statusLabel != null && statusLabel.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        statusLabel,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ],
+                    if (currentLabel != null && currentLabel.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        currentLabel,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
