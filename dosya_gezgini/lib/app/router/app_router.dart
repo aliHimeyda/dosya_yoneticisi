@@ -118,6 +118,11 @@ class Paths {
     return homeFolderContentLocation(folderPath);
   }
 
+  static bool isCleanupLocation(String location) {
+    return location == temizliksayfasi ||
+        location.startsWith('$temizliksayfasi?');
+  }
+
   static bool isMenuLocation(String location) {
     final path = _normalizeLocationPath(location);
     return path == menu || path.startsWith('$menu/');

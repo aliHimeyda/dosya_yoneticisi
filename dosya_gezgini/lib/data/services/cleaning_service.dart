@@ -7,6 +7,7 @@ import 'package:dosya_gezgini/data/models/cleaning_models.dart';
 import 'package:dosya_gezgini/data/repositories/thumbnail_cache_repository.dart';
 import 'package:dosya_gezgini/data/services/file_index_service.dart';
 import 'package:dosya_gezgini/data/services/file_metadata_service.dart';
+import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 typedef CleaningScanProgressCallback =
@@ -29,90 +30,141 @@ class CleaningService {
 
   Future<CleaningScanResult> scan({
     CleaningScanProgressCallback? onProgress,
+    bool Function()? shouldCancel,
   }) async {
-    final sources = await _resolveSources();
+    final stages = await _resolveStages();
     final candidates = <CleaningCandidate>[];
     final issues = <CleaningIssue>[];
+    final summaries = <CleaningSourceSummary>[];
+    final seenCandidatePaths = <String>{};
     var processedFiles = 0;
     var reclaimableBytes = 0;
 
-    for (var sourceIndex = 0; sourceIndex < sources.length; sourceIndex++) {
-      final source = sources[sourceIndex];
-      if (!await source.directory.exists()) {
-        onProgress?.call(
-          CleaningScanProgress(
-            source: source.type,
-            processedFiles: processedFiles,
-            candidateCount: candidates.length,
-            reclaimableBytes: reclaimableBytes,
-            completedSourceCount: sourceIndex + 1,
-          ),
-        );
-        continue;
-      }
-
-      await for (final entity in source.directory.list(
-        recursive: true,
-        followLinks: false,
-      )) {
-        if (entity is! File) {
-          continue;
-        }
-
-        processedFiles++;
-
-        try {
-          final lastModified = await entity.lastModified();
-          final fileSize = await entity.length();
-          final reason = _resolveCandidateReason(
-            lastModified: lastModified,
-            fileSize: fileSize,
-          );
-
-          if (reason != null) {
-            candidates.add(
-              CleaningCandidate(
-                path: entity.path,
-                sizeBytes: fileSize,
-                modifiedAt: lastModified,
-                source: source.type,
-                reason: reason,
-              ),
-            );
-            reclaimableBytes += fileSize;
-          }
-        } catch (error) {
-          issues.add(
-            CleaningIssue(
-              path: entity.path,
-              stage: CleaningIssueStage.scan,
-              message: error.toString(),
-            ),
-          );
-        }
-
-        if (processedFiles % CleaningConstants.scanYieldEveryFiles == 0) {
-          onProgress?.call(
-            CleaningScanProgress(
-              source: source.type,
-              processedFiles: processedFiles,
-              candidateCount: candidates.length,
-              reclaimableBytes: reclaimableBytes,
-              completedSourceCount: sourceIndex,
-              currentPath: entity.path,
-            ),
-          );
-          await Future<void>.delayed(Duration.zero);
-        }
-      }
+    for (var stageIndex = 0; stageIndex < stages.length; stageIndex++) {
+      _throwIfCancelled(shouldCancel);
+      final stage = stages[stageIndex];
 
       onProgress?.call(
         CleaningScanProgress(
-          source: source.type,
+          source: stage.type,
           processedFiles: processedFiles,
           candidateCount: candidates.length,
           reclaimableBytes: reclaimableBytes,
-          completedSourceCount: sourceIndex + 1,
+          completedSourceCount: stageIndex,
+        ),
+      );
+
+      final stageCandidates = <CleaningCandidate>[];
+      final stageIssues = <CleaningIssue>[];
+      var stageProcessedFiles = 0;
+      var stageDetectedCount = 0;
+      var stageDetectedBytes = 0;
+      var stageCleanableBytes = 0;
+
+      void emitStageProgress({String? currentPath}) {
+        onProgress?.call(
+          CleaningScanProgress(
+            source: stage.type,
+            processedFiles: processedFiles + stageProcessedFiles,
+            candidateCount: candidates.length + stageCandidates.length,
+            reclaimableBytes: reclaimableBytes + stageCleanableBytes,
+            completedSourceCount: stageIndex,
+            currentPath: currentPath,
+          ),
+        );
+      }
+
+      if (stage.directories.isNotEmpty) {
+        for (final directory in stage.directories) {
+          _throwIfCancelled(shouldCancel);
+          if (!await directory.exists()) {
+            continue;
+          }
+
+          await for (final entity in directory.list(
+            recursive: true,
+            followLinks: false,
+          )) {
+            _throwIfCancelled(shouldCancel);
+            if (entity is! File) {
+              continue;
+            }
+
+            stageProcessedFiles++;
+
+            try {
+              final resolveReason = stage.resolveReason;
+              if (resolveReason == null) {
+                continue;
+              }
+
+              final lastModified = await entity.lastModified();
+              final fileSize = await entity.length();
+              final reason = resolveReason(entity, lastModified, fileSize);
+
+              if (reason != null) {
+                stageDetectedCount++;
+                stageDetectedBytes += fileSize;
+
+                if (stage.isCleanable &&
+                    seenCandidatePaths.add(entity.path)) {
+                  stageCandidates.add(
+                    CleaningCandidate(
+                      path: entity.path,
+                      sizeBytes: fileSize,
+                      modifiedAt: lastModified,
+                      source: stage.type,
+                      reason: reason,
+                    ),
+                  );
+                  stageCleanableBytes += fileSize;
+                }
+              }
+            } catch (error) {
+              stageIssues.add(
+                CleaningIssue(
+                  path: entity.path,
+                  stage: CleaningIssueStage.scan,
+                  message: error.toString(),
+                ),
+              );
+            }
+
+            if (stageProcessedFiles % CleaningConstants.scanYieldEveryFiles ==
+                0) {
+              emitStageProgress(currentPath: entity.path);
+              await Future<void>.delayed(Duration.zero);
+            }
+          }
+        }
+      } else {
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      if (stage.type == CleaningSourceType.memory) {
+        emitStageProgress();
+      }
+
+      processedFiles += stageProcessedFiles;
+      reclaimableBytes += stageCleanableBytes;
+      candidates.addAll(stageCandidates);
+      issues.addAll(stageIssues);
+      summaries.add(
+        CleaningSourceSummary(
+          source: stage.type,
+          detectedItemCount: stageDetectedCount,
+          detectedBytes: stageDetectedBytes,
+          isCleanable: stage.isCleanable,
+        ),
+      );
+
+      onProgress?.call(
+        CleaningScanProgress(
+          source: stage.type,
+          processedFiles: processedFiles,
+          candidateCount: candidates.length,
+          reclaimableBytes: reclaimableBytes,
+          completedSourceCount: stageIndex + 1,
         ),
       );
       await Future<void>.delayed(Duration.zero);
@@ -123,6 +175,7 @@ class CleaningService {
       totalBytes: reclaimableBytes,
       processedFiles: processedFiles,
       issues: List<CleaningIssue>.unmodifiable(issues),
+      sourceSummaries: List<CleaningSourceSummary>.unmodifiable(summaries),
     );
   }
 
@@ -196,17 +249,100 @@ class CleaningService {
     );
   }
 
-  Future<List<_CleaningSource>> _resolveSources() async {
-    return <_CleaningSource>[
-      _CleaningSource(
-        type: CleaningSourceType.temporary,
-        directory: await getTemporaryDirectory(),
-      ),
-      _CleaningSource(
+  Future<List<_CleaningStage>> _resolveStages() async {
+    final temporaryDirectory = await getTemporaryDirectory();
+    final cacheDirectory = await getApplicationCacheDirectory();
+    final userDirectories = _resolveUserScanDirectories();
+
+    return <_CleaningStage>[
+      _CleaningStage(
         type: CleaningSourceType.cache,
-        directory: await getApplicationCacheDirectory(),
+        directories: <Directory>[cacheDirectory],
+        isCleanable: true,
+        resolveReason: (file, lastModified, fileSize) {
+          return _resolveCandidateReason(
+            lastModified: lastModified,
+            fileSize: fileSize,
+          );
+        },
+      ),
+      _CleaningStage(
+        type: CleaningSourceType.unusedFiles,
+        directories: userDirectories,
+        isCleanable: false,
+        resolveReason: (file, lastModified, fileSize) {
+          final extension = path.extension(file.path).toLowerCase();
+          final isPackageFile = CleaningConstants.packageExtensions.contains(
+            extension,
+          );
+          final isResidualFile = CleaningConstants.residualExtensions.contains(
+            extension,
+          );
+          final isUnused =
+              !isPackageFile &&
+              !isResidualFile &&
+              fileSize > 0 &&
+              DateTime.now().difference(lastModified) >
+                  CleaningConstants.unusedFileAge;
+          return isUnused ? CleaningCandidateReason.stale : null;
+        },
+      ),
+      _CleaningStage(
+        type: CleaningSourceType.packages,
+        directories: userDirectories,
+        isCleanable: true,
+        resolveReason: (file, lastModified, fileSize) {
+          final extension = path.extension(file.path).toLowerCase();
+          if (!CleaningConstants.packageExtensions.contains(extension)) {
+            return null;
+          }
+          return CleaningCandidateReason.packageInstaller;
+        },
+      ),
+      _CleaningStage(
+        type: CleaningSourceType.residualFiles,
+        directories: <Directory>[temporaryDirectory, ...userDirectories],
+        isCleanable: true,
+        resolveReason: (file, lastModified, fileSize) {
+          final normalizedFilePath = file.path.toLowerCase();
+          final isTemporaryFile = normalizedFilePath.startsWith(
+            temporaryDirectory.path.toLowerCase(),
+          );
+          if (isTemporaryFile) {
+            return _resolveCandidateReason(
+                  lastModified: lastModified,
+                  fileSize: fileSize,
+                ) ??
+                CleaningCandidateReason.residualJunk;
+          }
+
+          final extension = path.extension(file.path).toLowerCase();
+          if (!CleaningConstants.residualExtensions.contains(extension)) {
+            return null;
+          }
+          return CleaningCandidateReason.residualJunk;
+        },
+      ),
+      const _CleaningStage(
+        type: CleaningSourceType.memory,
+        directories: <Directory>[],
+        isCleanable: false,
       ),
     ];
+  }
+
+  List<Directory> _resolveUserScanDirectories() {
+    final directories = <Directory>[];
+    final seenPaths = <String>{};
+
+    for (final directoryName in CleaningConstants.userScanDirectoryNames) {
+      final directoryPath = path.join(storageRootPath, directoryName);
+      if (seenPaths.add(directoryPath)) {
+        directories.add(Directory(directoryPath));
+      }
+    }
+
+    return directories;
   }
 
   CleaningCandidateReason? _resolveCandidateReason({
@@ -231,6 +367,12 @@ class CleaningService {
         : CleaningCandidateReason.large;
   }
 
+  void _throwIfCancelled(bool Function()? shouldCancel) {
+    if (shouldCancel?.call() ?? false) {
+      throw const CleaningCancelledException();
+    }
+  }
+
   Future<void> _purgeThumbnailMetadata(List<String> deletedPaths) async {
     if (deletedPaths.isEmpty) {
       return;
@@ -252,9 +394,20 @@ class CleaningService {
   }
 }
 
-class _CleaningSource {
-  const _CleaningSource({required this.type, required this.directory});
+class _CleaningStage {
+  const _CleaningStage({
+    required this.type,
+    required this.directories,
+    required this.isCleanable,
+    this.resolveReason,
+  });
 
   final CleaningSourceType type;
-  final Directory directory;
+  final List<Directory> directories;
+  final bool isCleanable;
+  final CleaningCandidateReason? Function(
+    File file,
+    DateTime lastModified,
+    int fileSize,
+  )? resolveReason;
 }

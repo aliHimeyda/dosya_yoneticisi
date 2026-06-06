@@ -1,6 +1,19 @@
-enum CleaningSourceType { temporary, cache }
+enum CleaningSourceType {
+  temporary,
+  cache,
+  unusedFiles,
+  packages,
+  residualFiles,
+  memory,
+}
 
-enum CleaningCandidateReason { stale, large, staleAndLarge }
+enum CleaningCandidateReason {
+  stale,
+  large,
+  staleAndLarge,
+  packageInstaller,
+  residualJunk,
+}
 
 enum CleaningIssueStage { scan, delete }
 
@@ -50,20 +63,45 @@ class CleaningScanProgress {
   final String? currentPath;
 }
 
+class CleaningSourceSummary {
+  const CleaningSourceSummary({
+    required this.source,
+    required this.detectedItemCount,
+    required this.detectedBytes,
+    required this.isCleanable,
+  });
+
+  final CleaningSourceType source;
+  final int detectedItemCount;
+  final int detectedBytes;
+  final bool isCleanable;
+}
+
 class CleaningScanResult {
   const CleaningScanResult({
     required this.candidates,
     required this.totalBytes,
     required this.processedFiles,
     required this.issues,
+    required this.sourceSummaries,
   });
 
   final List<CleaningCandidate> candidates;
   final int totalBytes;
   final int processedFiles;
   final List<CleaningIssue> issues;
+  final List<CleaningSourceSummary> sourceSummaries;
 
   bool get hasCandidates => candidates.isNotEmpty;
+
+  CleaningSourceSummary? summaryFor(CleaningSourceType source) {
+    for (final summary in sourceSummaries) {
+      if (summary.source == source) {
+        return summary;
+      }
+    }
+    return null;
+  }
 }
 
 class CleaningDeleteProgress {
@@ -105,4 +143,8 @@ class CleaningDeleteResult {
 
   int get deletedCount => deletedPaths.length;
   bool get hasIssues => issues.isNotEmpty;
+}
+
+class CleaningCancelledException implements Exception {
+  const CleaningCancelledException();
 }

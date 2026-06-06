@@ -1,8 +1,12 @@
 import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
 import 'package:dosya_gezgini/core/localization/locale_provider.dart';
 import 'package:dosya_gezgini/core/theme/app_theme.dart';
+import 'package:dosya_gezgini/features/files/state/izinler.dart';
+import 'package:dosya_gezgini/features/menu/data/services/downloads_status_service.dart';
+import 'package:dosya_gezgini/features/menu/data/services/network_stats_service.dart';
 import 'package:dosya_gezgini/features/menu/state/localestoragebilgileri.dart';
 import 'package:dosya_gezgini/features/menu/state/menu_provider.dart';
+import 'package:dosya_gezgini/features/menu/state/menu_status_provider.dart';
 import 'package:dosya_gezgini/shared/widgets/app_skeleton.dart';
 import 'package:dosya_gezgini/shared/widgets/storage_card_skeleton.dart';
 import 'package:flutter/material.dart';
@@ -14,8 +18,18 @@ class Menu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<MenuProvider>(
-      create: (_) => MenuProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<MenuProvider>(create: (_) => MenuProvider()),
+        ChangeNotifierProvider<MenuStatusProvider>(
+          create:
+              (context) => MenuStatusProvider(
+                izinler: context.read<Izinler>(),
+                downloadsStatusService: DownloadsStatusService(),
+                networkStatsService: const NetworkStatsService(),
+              )..initialize(),
+        ),
+      ],
       child: const _MenuView(),
     );
   }
@@ -29,30 +43,29 @@ class _MenuView extends StatelessWidget {
     final l10n = context.l10n;
     final appTheme = Theme.of(context);
     final menuProvider = context.read<MenuProvider>();
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+
+    context.read<MenuStatusProvider>().syncRouteVisibility(isCurrentRoute);
+
     return Center(
       child: Column(
         children: [
           Container(
             height: 50,
+            width: MediaQuery.of(context).size.width,
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(width: 2, color: appTheme.primaryColor),
               ),
             ),
-            child: Row(
-              children: [
-                saatbox(context, appTheme),
-                depolamaDurumuBox(context, appTheme),
-                pilDurumuBox(context, appTheme),
-              ],
-            ),
+            child: depolamaDurumuBox(context, appTheme),
           ),
           Wrap(
             children: [
-              kareislemsecenegi(context, l10n.actionLabel, Icons.abc, appTheme),
-              kareislemsecenegi(context, l10n.actionLabel, Icons.abc, appTheme),
-              kareislemsecenegi(context, l10n.actionLabel, Icons.abc, appTheme),
-              kareislemsecenegi(context, l10n.actionLabel, Icons.abc, appTheme),
+              saatIslemKutusu(context, appTheme),
+              pilDurumuIslemKutusu(context, appTheme),
+              indirilenlerIslemKutusu(context, appTheme),
+              internetKullanimiIslemKutusu(context, appTheme),
             ],
           ),
           Animate(
@@ -71,7 +84,8 @@ class _MenuView extends StatelessWidget {
                 child: Row(
                   children: [
                     Selector<AppTheme, IconData>(
-                      selector: (_, appThemeProvider) => appThemeProvider.temaiconu,
+                      selector:
+                          (_, appThemeProvider) => appThemeProvider.temaiconu,
                       builder: (context, themeIcon, _) {
                         return Icon(themeIcon, size: 30);
                       },
@@ -138,7 +152,7 @@ class _MenuView extends StatelessWidget {
 
   Widget dilSecimCubugu(
     BuildContext context,
-    appTheme,
+    ThemeData appTheme,
     MenuProvider menuProvider,
   ) {
     return Animate(
@@ -174,6 +188,24 @@ class _MenuView extends StatelessWidget {
                 selector: (_, localeProvider) => localeProvider.languageCode,
                 builder: (context, languageCode, _) {
                   return SegmentedButton<String>(
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith<Color?>((
+                        states,
+                      ) {
+                        if (states.contains(WidgetState.selected)) {
+                          return Theme.of(context).primaryColor;
+                        }
+                        return Colors.transparent;
+                      }),
+                      foregroundColor: WidgetStateProperty.resolveWith<Color?>((
+                        states,
+                      ) {
+                        if (states.contains(WidgetState.selected)) {
+                          return Colors.white;
+                        }
+                        return Theme.of(context).colorScheme.onSurface;
+                      }),
+                    ),
                     showSelectedIcon: false,
                     segments: const [
                       ButtonSegment<String>(value: 'tr', label: Text('TR')),
@@ -194,61 +226,144 @@ class _MenuView extends StatelessWidget {
     );
   }
 
-  Container saatbox(BuildContext context, appTheme) {
+  Widget saatIslemKutusu(BuildContext context, ThemeData appTheme) {
     final menuProvider = context.read<MenuProvider>();
-    return Container(
-      width: MediaQuery.of(context).size.width / 4,
-      height: 50,
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(width: 2, color: appTheme.primaryColor),
-        ),
-      ),
-      child: Center(
-        child: StreamBuilder<String>(
-          stream: menuProvider.currentTimeStream,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const AppSkeleton(
-                width: 48,
-                height: 18,
-                borderRadius: BorderRadius.all(Radius.circular(6)),
-              );
-            }
-
-            return Text(
-              snapshot.data!,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+    return bilgiKutusuCercevesi(
+      context,
+      appTheme,
+      child: StreamBuilder<String>(
+        stream: menuProvider.currentTimeStream,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const AppSkeleton(
+              width: 72,
+              height: 18,
+              borderRadius: BorderRadius.all(Radius.circular(6)),
             );
-          },
+          }
+
+          return Row(
+            children: [
+              Icon(Icons.schedule, size: 24, color: appTheme.primaryColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  snapshot.data!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: bilgiDegeriTextStyle(appTheme),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget pilDurumuIslemKutusu(BuildContext context, ThemeData appTheme) {
+    final menuProvider = context.read<MenuProvider>();
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Container(
+        width: MediaQuery.of(context).size.width / 2 - 60,
+        height: 60,
+        decoration: BoxDecoration(
+          border: Border.all(width: 0.8, color: appTheme.iconTheme.color!),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(9.2),
+          child: StreamBuilder<int>(
+            stream: menuProvider.batteryLevelStream,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(
+                  child: AppSkeleton(
+                    width: 72,
+                    height: 18,
+                    borderRadius: BorderRadius.all(Radius.circular(6)),
+                  ),
+                );
+              }
+
+              final batteryLevel = snapshot.data!.clamp(0, 100);
+              final batteryProgress = batteryLevel / 100;
+
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: LinearProgressIndicator(
+                      value: batteryProgress,
+                      backgroundColor: appTheme.scaffoldBackgroundColor,
+                      color: appTheme.secondaryHeaderColor,
+                      minHeight: 60,
+                    ).animate().custom(
+                      duration: 1.seconds,
+                      begin: 0.0,
+                      end: batteryProgress,
+                      builder:
+                          (context, value, child) => LinearProgressIndicator(
+                            value: value,
+                            backgroundColor: appTheme.scaffoldBackgroundColor,
+                            color: appTheme.secondaryHeaderColor,
+                            minHeight: 60,
+                          ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.battery_6_bar,
+                            size: 24,
+                            color: appTheme.primaryColor,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '$batteryLevel%',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: bilgiDegeriTextStyle(appTheme),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
-  Container depolamaDurumuBox(BuildContext context, appTheme) {
+  Widget depolamaDurumuBox(BuildContext context, ThemeData appTheme) {
     final storage = context.watch<Localestoragebilgileri>();
-    return Container(
-      width: MediaQuery.of(context).size.width / 2,
+    final totalSpace = storage.totalspace <= 0 ? 1 : storage.totalspace;
+
+    return SizedBox(
+      width: MediaQuery.of(context).size.width,
       height: 50,
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(width: 2, color: appTheme.primaryColor),
-        ),
-      ),
       child:
           storage.usedspace != 0
               ? Stack(
                 children: [
                   LinearProgressIndicator(
-                    value: storage.usedspace / storage.totalspace,
+                    value: storage.usedspace / totalSpace,
                     backgroundColor: appTheme.scaffoldBackgroundColor,
                     color: appTheme.secondaryHeaderColor,
                     minHeight: 50,
                   ).animate().custom(
                     duration: 1.seconds,
                     begin: 0.0,
-                    end: storage.usedspace / storage.totalspace,
+                    end: storage.usedspace / totalSpace,
                     builder:
                         (context, value, child) => LinearProgressIndicator(
                           value: value,
@@ -260,6 +375,7 @@ class _MenuView extends StatelessWidget {
                   Center(
                     child: Text(
                       '${storage.usedspace.toStringAsFixed(2)} | ${storage.totalspace.toStringAsFixed(2)} GB',
+                      style: bilgiDegeriTextStyle(appTheme),
                     ),
                   ),
                 ],
@@ -268,99 +384,188 @@ class _MenuView extends StatelessWidget {
     );
   }
 
-  SizedBox pilDurumuBox(BuildContext context, appTheme) {
-    final menuProvider = context.read<MenuProvider>();
-    return SizedBox(
-      width: MediaQuery.of(context).size.width / 4,
-      height: 50,
-      child: Center(
-        child: StreamBuilder<int>(
-          stream: menuProvider.batteryLevelStream,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const AppSkeleton(
-                width: 52,
-                height: 18,
-                borderRadius: BorderRadius.all(Radius.circular(6)),
-              );
-            }
-
-            return Stack(
-              children: [
-                LinearProgressIndicator(
-                  value: snapshot.data! / 100,
-                  backgroundColor: appTheme.scaffoldBackgroundColor,
-                  color: appTheme.secondaryHeaderColor,
-                  minHeight: 50,
-                ).animate().custom(
-                  duration: 1.seconds,
-                  begin: 0.0,
-                  end: snapshot.data! / 100,
-                  builder:
-                      (context, value, child) => LinearProgressIndicator(
-                        value: value,
-                        backgroundColor: appTheme.scaffoldBackgroundColor,
-                        color: appTheme.secondaryHeaderColor,
-                        minHeight: 50,
-                      ),
-                ),
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.earbuds_battery),
-                      Text(
-                        snapshot.data!.toString(),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+  Widget indirilenlerIslemKutusu(BuildContext context, ThemeData appTheme) {
+    final l10n = context.l10n;
+    return bilgiKutusuCercevesi(
+      context,
+      appTheme,
+      child: Selector<
+        MenuStatusProvider,
+        ({bool isLoading, String sizeText, String? error})
+      >(
+        selector:
+            (_, provider) => (
+              isLoading: provider.isLoadingDownloadsSize,
+              sizeText: provider.downloadsSizeText,
+              error: provider.downloadsSizeError,
+            ),
+        builder: (context, state, _) {
+          if (state.isLoading) {
+            return const AppSkeleton(
+              width: 88,
+              height: 28,
+              borderRadius: BorderRadius.all(Radius.circular(6)),
             );
-          },
+          }
+
+          final displayText = switch (state.error) {
+            MenuStatusProvider.permissionDeniedError =>
+              l10n.permissionDeniedShort,
+            MenuStatusProvider.unreadableError => l10n.unreadableShort,
+            _ => state.sizeText,
+          };
+
+          return Row(
+            children: [
+              Icon(
+                Icons.download_rounded,
+                size: 24,
+                color: appTheme.primaryColor,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.downloadsLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: bilgiEtiketiTextStyle(appTheme),
+                    ),
+                    Text(
+                      displayText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: bilgiDegeriTextStyle(appTheme),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget internetKullanimiIslemKutusu(
+    BuildContext context,
+    ThemeData appTheme,
+  ) {
+    return bilgiKutusuCercevesi(
+      context,
+      appTheme,
+      child: Selector<
+        MenuStatusProvider,
+        ({String downloadText, String uploadText, bool isAvailable})
+      >(
+        selector:
+            (_, provider) => (
+              downloadText: provider.downloadSpeedText,
+              uploadText: provider.uploadSpeedText,
+              isAvailable: provider.isNetworkStatsAvailable,
+            ),
+        builder: (context, state, _) {
+          final downloadText =
+              state.isAvailable ? state.downloadText : '0 KB/s';
+          final uploadText = state.isAvailable ? state.uploadText : '0 KB/s';
+
+          return Row(
+            children: [
+              Icon(Icons.wifi_rounded, size: 24, color: appTheme.primaryColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.download_rounded,
+                          size: 16,
+                          color: appTheme.primaryColor,
+                        ),
+                        const SizedBox(width: 1),
+                        Text(
+                          downloadText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: bilgiDegeriTextStyle(appTheme),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.upload_rounded,
+                          size: 16,
+                          color: appTheme.primaryColor,
+                        ),
+                        const SizedBox(width: 1),
+                        Text(
+                          uploadText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: bilgiAltDegerTextStyle(appTheme),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget bilgiKutusuCercevesi(
+    BuildContext context,
+    ThemeData appTheme, {
+    required Widget child,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: Container(
+        width: MediaQuery.of(context).size.width / 2 - 60,
+        height: 60,
+        decoration: BoxDecoration(
+          border: Border.all(width: 0.8, color: appTheme.iconTheme.color!),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: child,
+          ),
         ),
       ),
     );
   }
 
-  GestureDetector kareislemsecenegi(
-    BuildContext context,
-    String islem,
-    IconData icon,
-    appTheme,
-  ) {
-    return GestureDetector(
-      onTap: () {},
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Container(
-          width: MediaQuery.of(context).size.width / 2 - 60,
-          height: 60,
-          decoration: BoxDecoration(
-            border: Border.all(width: 0.8, color: appTheme.iconTheme.color!),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                spacing: 4,
-                children: [
-                  Icon(icon, size: 30),
-                  Expanded(
-                    child: Text(
-                      islem,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+  TextStyle bilgiDegeriTextStyle(ThemeData appTheme) {
+    return (appTheme.textTheme.bodyLarge ?? const TextStyle()).copyWith(
+      fontWeight: FontWeight.w700,
+      color: appTheme.textTheme.bodyLarge?.color,
+    );
+  }
+
+  TextStyle bilgiAltDegerTextStyle(ThemeData appTheme) {
+    return (appTheme.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+      fontWeight: FontWeight.w600,
+      color: appTheme.textTheme.bodyMedium?.color,
+    );
+  }
+
+  TextStyle bilgiEtiketiTextStyle(ThemeData appTheme) {
+    return (appTheme.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+      fontWeight: FontWeight.w600,
+      color: (appTheme.textTheme.bodyMedium?.color ?? appTheme.iconTheme.color)
+          ?.withValues(alpha: 0.76),
     );
   }
 
@@ -369,7 +574,7 @@ class _MenuView extends StatelessWidget {
     IconData icon,
     String hizmet,
     int index,
-    appTheme,
+    ThemeData appTheme,
     MenuProvider menuProvider,
   ) {
     return GestureDetector(

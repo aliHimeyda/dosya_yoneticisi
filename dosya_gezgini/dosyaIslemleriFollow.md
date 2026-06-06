@@ -477,3 +477,119 @@ Bu nedenle mevcut sistemin merkezi ilkesi sudur:
 - is mantigi state + service katmanina yayilir,
 - UI yalnizca tetikler ve sonucu gosterir,
 - fiziksel mutasyon sonrasinda her zaman senkron refresh calisir.
+## 21. Guncel Temizlik UI ve Provider Akisi
+
+Son eklenen temizlik sistemi, eski cleanup mantigini koruyup UI tarafini stateless modern yapiya tasir.
+
+### 21.1 Sayfa Acilis Akisi
+
+1. Router yine `Temizliksayfasi` sinifini acar.
+2. `Temizliksayfasi`, sayfa icin yerel `ChangeNotifierProvider<TemizliksayfasiProvider>` kurar.
+3. Provider olusurken `ensureScanStarted()` cagrilir.
+4. Bu metod taramayi build icinde degil, guvenli sekilde frame sonrasinda baslatir.
+5. Ekranda `CleanerPage` gosterilir.
+6. `CleanerPage` tamamen stateless calisir; `StatefulWidget`, `setState`, `Timer.periodic` veya mock scan listesi kullanmaz.
+
+### 21.2 Temizlik State Kaynagi
+
+1. Gercek cleanup state'i `Dosyaislemleri` icinde tutulur.
+2. `TemizliksayfasiProvider`, `Dosyaislemleri` degisimlerini dinler.
+3. UI tarafina su bilgiler provider uzerinden tasinir:
+   - `isScanning`
+   - `isCleaning`
+   - `isStopped`
+   - `cleanupCandidateCount`
+   - `cleanupCandidateBytes`
+   - `progressValue`
+   - `currentScanningPackage`
+   - `scanIssues`
+   - `deleteIssues`
+   - `deleteResult`
+
+### 21.3 Tarama Asamalari
+
+Temizlik taramasi artik 5 asamada ilerler:
+
+1. `cache`
+   - Cache ve gecici dosyalar analiz edilir.
+2. `unusedFiles`
+   - Uzun suredir kullanilmayan veya onerisel nitelikteki dosyalar analiz edilir.
+   - Bu asama analiz odaklidir; riskli otomatik silme yapmaz.
+3. `packages`
+   - `.apk`, `.xapk`, `.apks` uzantili kurulum dosyalari taranir.
+4. `residualFiles`
+   - Artik/gecici/junk niteligindeki guvenli adaylar taranir.
+5. `memory`
+   - RAM silme yapilmaz.
+   - Desteklenmeyen veya riskli bir islem yerine analiz/optimizasyon asamasi olarak tamamlanir.
+
+### 21.4 Tarama Ilerleme Akisi
+
+1. `Dosyaislemleri.startCleanupScan()` cagrisi cleanup taramasini baslatir.
+2. Iceride `CleaningService.scan(...)` calisir.
+3. Service, `onProgress` callback'i ile asama bazli ilerlemeyi geri bildirir.
+4. `currentScanningPackage` alani o anda islenen bolumu veya etiketi UI'a tasir.
+5. Buyuk daire, mevcut toplam temizlenebilir boyutu gosterir.
+6. Durum listesi her asamayi `pending -> scanning -> completed/failed` gecisleriyle gunceller.
+7. Tarama boyunca mevcut dosya sistemi ve cache yapisi korunur; UI agir isi dogrudan yapmaz.
+
+### 21.5 Tarama Durdurma Akisi
+
+1. Kullanici ana buton `Durdur` durumundayken butona basar.
+2. Provider, `Dosyaislemleri.requestCleanupStop()` cagirir.
+3. `CleaningService.scan(...)` icindeki `shouldCancel` kontrolu bunu gorur.
+4. Service, `CleaningCancelledException` firlatir.
+5. `Dosyaislemleri.startCleanupScan()` bu durumu yakalar.
+6. Cleanup state'i `isStopped = true` olacak sekilde guncellenir.
+7. UI'da tarama etiketi `Tarama durduruldu` durumuna duser.
+
+### 21.6 Ana Buton Davranisi
+
+Alt ana aksiyon butonu state'e gore farkli davranir:
+
+1. Tarama devam ediyorsa:
+   - Buton `Durdur` olur.
+   - Stop akisi calisir.
+2. Tarama tamamlanmis ve silinebilir aday varsa:
+   - Buton `Temizle` olur.
+   - Kullaniciya onay dialogu gosterilir.
+3. Tarama durmus veya aday bulunmamis ama tekrar denenmesi gerekiyorsa:
+   - Buton `Tekrar Tara` veya benzeri yeniden baslatma davranisi verir.
+4. Silme bittiyse:
+   - Buton `Tamamlandi` durumuna gecer.
+   - Sayfayi kapatma/bitis davranisi aktif olur.
+
+### 21.7 Temizleme (Delete) Akisi
+
+1. Kullanici `Temizle` butonuna basar.
+2. Provider once mevcut confirm dialog akisini kullanir.
+3. Onay gelirse `Dosyaislemleri.startCleanupDelete()` cagrilir.
+4. Iceride `CleaningService.deleteCandidates(...)` calisir.
+5. Service:
+   - silinebilir aday dosyalari kaldirir
+   - thumbnail metadata kayitlarini temizler
+   - file metadata cache kayitlarini temizler
+   - file index yenilemesini tetikler
+6. `Dosyaislemleri`, mevcut refresh zincirini koruyarak root/aktif klasor/index senkronunu surdurur.
+7. Silme sonucu `deleteResult` ve issue listeleri UI'a geri yansir.
+
+### 21.8 Issue ve Sonuc Gosterimi
+
+1. Tarama sirasinda olusan problemler `scanIssues` listesine yazilir.
+2. Silme sirasindaki problemler `deleteIssues` listesine yazilir.
+3. `CleanerPage`, bu issue listelerini ayri kartlar halinde gosterir.
+4. Boylece kullanici:
+   - hangi asamanin tamamlandigini
+   - hangi asamada sorun oldugunu
+   - ne kadar alan bulunup temizlendigini
+   gorebilir.
+
+### 21.9 Modern UI Ama Eski Is Mantigi
+
+Bu guncellemeden sonra cleanup ekraninda:
+
+1. Gercek temizlik/tarama isi hala service ve state katmaninda kalir.
+2. `CleanerPage` yalnizca gorunumu olusturur.
+3. `flutter_animate`, `AnimatedSwitcher` ve benzeri animasyonlar gercek provider state'i ile calisir.
+4. Demo data, sahte tarama, local timer veya `setState` tabanli akis yoktur.
+5. Eski cleanup mantigi korunur, sadece UI daha modern ve asama odakli hale getirilir.

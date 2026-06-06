@@ -128,7 +128,7 @@ class _AramaView extends StatelessWidget {
     final loadingPlaceholders = searchController.isLoadingMore ? 3 : 0;
     final footerErrorCount = showFooterError ? 1 : 0;
 
-      return RefreshIndicator(
+    return RefreshIndicator(
       color: Theme.of(context).primaryColor,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       onRefresh: context.read<AramaProvider>().refresh,
@@ -146,7 +146,7 @@ class _AramaView extends StatelessWidget {
             return const FileItemSkeleton();
           }
 
-            return Padding(
+          return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: ErrorStateWidget(
               message: l10n.errorOccurred,

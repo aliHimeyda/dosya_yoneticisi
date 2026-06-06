@@ -42,6 +42,7 @@ class _AnasayfaView extends StatelessWidget {
     final appTheme = Theme.of(context);
     final currentLocation = GoRouterState.of(context).uri.toString();
     final isSelectionMode = context.watch<Altislemprovider>().anahtar;
+    final isCleanupLocation = Paths.isCleanupLocation(currentLocation);
     final showFolderContextActions = Paths.isFolderContextLocation(
       currentLocation,
     );
@@ -59,33 +60,38 @@ class _AnasayfaView extends StatelessWidget {
         provider.handleRootPop(context, isSelectionMode: isSelectionMode);
       },
       child: Scaffold(
-        bottomNavigationBar: _selectionActionBar(context, appTheme),
+        bottomNavigationBar:
+            isCleanupLocation ? null : _selectionActionBar(context, appTheme),
         backgroundColor: appTheme.scaffoldBackgroundColor,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(
-            kBottomNavigationBarHeight * 2.1,
-          ),
-          child:
-              showFolderContextActions
-                  ? Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          width: 0.5,
-                          color: appTheme.iconTheme.color!,
-                        ),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        _topNavigationBar(context, appTheme),
-                        _locationAndActionsRow(context, appTheme),
-                      ],
-                    ),
-                  )
-                  : _topNavigationBar(context, appTheme),
-        ),
-        floatingActionButton: _cleanupButton(context),
+        appBar:
+            isCleanupLocation
+                ? null
+                : PreferredSize(
+                  preferredSize: const Size.fromHeight(
+                    kBottomNavigationBarHeight * 2.1,
+                  ),
+                  child:
+                      showFolderContextActions
+                          ? Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  width: 0.5,
+                                  color: appTheme.iconTheme.color!,
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                _topNavigationBar(context, appTheme),
+                                _locationAndActionsRow(context, appTheme),
+                              ],
+                            ),
+                          )
+                          : _topNavigationBar(context, appTheme),
+                ),
+        floatingActionButton:
+            isCleanupLocation ? null : _cleanupButton(context),
         body: Stack(
           children: [
             navigationShell,

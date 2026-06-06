@@ -7,6 +7,7 @@ class HiveBoxNames {
   static const String recentItems = 'recent_items';
   static const String savedItems = 'saved_items';
   static const String hiddenItems = 'hidden_items';
+  static const String hiddenPasswordSettings = 'hidden_password_settings';
   static const String folderCountCache = 'folder_count_cache';
   static const String directoryCache = 'directory_cache_box';
   static const String directoryCacheMetadata = 'directory_cache_metadata';

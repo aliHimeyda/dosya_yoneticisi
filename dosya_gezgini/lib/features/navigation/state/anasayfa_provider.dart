@@ -2,13 +2,13 @@ import 'dart:io';
 
 import 'package:dosya_gezgini/app/router/app_router.dart';
 import 'package:dosya_gezgini/core/localization/l10n_extensions.dart';
+import 'package:dosya_gezgini/features/files/presentation/widgets/hidden_password_bottom_sheet.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/dosyaislemleri.dart';
 import 'package:dosya_gezgini/features/files/state/folderleragaci.dart';
 import 'package:dosya_gezgini/features/files/state/izinler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path/path.dart' as pathinfo;
 
@@ -22,8 +22,6 @@ class AnasayfaProvider extends ChangeNotifier {
        _izinler = izinler,
        _altIslemProvider = altIslemProvider,
        _dosyaIslemleri = dosyaIslemleri;
-
-  static const String _hiddenFilesPassword = 'alihimeyda';
 
   final StatefulNavigationShell _navigationShell;
   final Izinler _izinler;
@@ -156,120 +154,10 @@ class AnasayfaProvider extends ChangeNotifier {
   }
 
   Future<void> showHiddenFilesPasswordSheet(BuildContext context) async {
-    final appTheme = Theme.of(context);
-    final pageContext = context;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder:
-          (sheetContext) => Container(
-            padding: EdgeInsets.only(
-              top: 20,
-              left: 20,
-              right: 20,
-              bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-            ),
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(sheetContext).size.height * 0.8,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Center(
-                  child: Container(
-                    width: MediaQuery.of(sheetContext).size.width - 20,
-                    height: MediaQuery.of(sheetContext).size.height / 10,
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          width: 0.3,
-                          color: appTheme.iconTheme.color!,
-                        ),
-                        top: BorderSide(
-                          width: 1,
-                          color: appTheme.iconTheme.color!,
-                        ),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.lock,
-                            color: appTheme.primaryColor,
-                            size: 50,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: textController,
-                              decoration: InputDecoration(
-                                hintText: sheetContext.l10n.passwordHint,
-                                hintStyle: appTheme.textTheme.bodyLarge,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    ElevatedButton(
-                      onPressed:
-                          () => _submitHiddenFilesPassword(
-                            pageContext: pageContext,
-                            sheetContext: sheetContext,
-                            appTheme: appTheme,
-                          ),
-                      child: Text(sheetContext.l10n.ok),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => _closeSheet(sheetContext),
-                      child: Text(sheetContext.l10n.cancel),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  void _submitHiddenFilesPassword({
-    required BuildContext pageContext,
-    required BuildContext sheetContext,
-    required ThemeData appTheme,
-  }) {
-    final password = textController.text.trim();
-    _closeSheet(sheetContext);
-
-    if (!pageContext.mounted) {
-      return;
+    final result = await showHiddenFilesPasswordFlow(context);
+    if (context.mounted && result != null) {
+      context.push(Paths.gizlidosyalar);
     }
-
-    if (password == _hiddenFilesPassword) {
-      pageContext.push(Paths.gizlidosyalar);
-      return;
-    }
-
-    Fluttertoast.showToast(
-      msg: pageContext.l10n.incorrectPassword,
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.TOP,
-      timeInSecForIosWeb: 10,
-      backgroundColor: appTheme.secondaryHeaderColor,
-      textColor: appTheme.textTheme.labelLarge!.color,
-      fontSize: 16,
-    );
   }
 
   Future<void> showDeleteConfirmation(BuildContext context) async {

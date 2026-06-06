@@ -7,12 +7,14 @@ import 'package:dosya_gezgini/data/repositories/file_index_repository.dart';
 import 'package:dosya_gezgini/data/repositories/file_metadata_repository.dart';
 import 'package:dosya_gezgini/data/repositories/folder_count_repository.dart';
 import 'package:dosya_gezgini/data/repositories/hidden_repository.dart';
+import 'package:dosya_gezgini/data/repositories/hidden_password_repository.dart';
 import 'package:dosya_gezgini/data/repositories/recent_repository.dart';
 import 'package:dosya_gezgini/data/repositories/saved_repository.dart';
 import 'package:dosya_gezgini/data/repositories/search_repository.dart';
 import 'package:dosya_gezgini/data/repositories/thumbnail_cache_repository.dart';
 import 'package:dosya_gezgini/data/services/category_query_service.dart';
 import 'package:dosya_gezgini/data/services/cleaning_service.dart';
+import 'package:dosya_gezgini/data/services/device_auth_service.dart';
 import 'package:dosya_gezgini/data/services/file_access_service.dart';
 import 'package:dosya_gezgini/data/services/file_index_service.dart';
 import 'package:dosya_gezgini/data/services/file_metadata_service.dart';
@@ -22,6 +24,7 @@ import 'package:dosya_gezgini/data/services/file_system_service.dart';
 import 'package:dosya_gezgini/data/services/hive_service.dart';
 import 'package:dosya_gezgini/data/services/search_query_service.dart';
 import 'package:dosya_gezgini/data/services/thumbnail_cache_service.dart';
+import 'package:dosya_gezgini/features/files/state/hidden_password_provider.dart';
 import 'package:dosya_gezgini/features/files/state/altislem_provider.dart';
 import 'package:dosya_gezgini/features/files/state/dosyaislemleri.dart';
 import 'package:dosya_gezgini/features/files/state/izinler.dart';
@@ -43,10 +46,12 @@ Future<void> bootstrap() async {
   final recentRepository = RecentRepository(hiveService);
   final savedRepository = SavedRepository(hiveService);
   final hiddenRepository = HiddenRepository(hiveService);
+  final hiddenPasswordRepository = HiddenPasswordRepository(hiveService);
   final thumbnailCacheRepository = ThumbnailCacheRepository(hiveService);
   final thumbnailCacheService = ThumbnailCacheService(
     repository: thumbnailCacheRepository,
   );
+  final deviceAuthService = DeviceAuthService();
   final fileAccessService = FileAccessService();
   final fileMetadataService = FileMetadataService(
     repository: fileMetadataRepository,
@@ -101,6 +106,8 @@ Future<void> bootstrap() async {
       recentRepository: recentRepository,
       savedRepository: savedRepository,
       hiddenRepository: hiddenRepository,
+      hiddenPasswordRepository: hiddenPasswordRepository,
+      deviceAuthService: deviceAuthService,
       fileAccessService: fileAccessService,
       fileMetadataService: fileMetadataService,
       cleaningService: cleaningService,
@@ -124,6 +131,8 @@ Widget buildApp({
   required RecentRepository recentRepository,
   required SavedRepository savedRepository,
   required HiddenRepository hiddenRepository,
+  required HiddenPasswordRepository hiddenPasswordRepository,
+  required DeviceAuthService deviceAuthService,
   required FileAccessService fileAccessService,
   required FileMetadataService fileMetadataService,
   required CleaningService cleaningService,
@@ -145,6 +154,8 @@ Widget buildApp({
       Provider<RecentRepository>.value(value: recentRepository),
       Provider<SavedRepository>.value(value: savedRepository),
       Provider<HiddenRepository>.value(value: hiddenRepository),
+      Provider<HiddenPasswordRepository>.value(value: hiddenPasswordRepository),
+      Provider<DeviceAuthService>.value(value: deviceAuthService),
       Provider<FileAccessService>.value(value: fileAccessService),
       Provider<FileMetadataService>.value(value: fileMetadataService),
       Provider<CleaningService>.value(value: cleaningService),
@@ -158,6 +169,13 @@ Widget buildApp({
       ChangeNotifierProvider(create: (_) => AppTheme()),
       ChangeNotifierProvider(
         create: (_) => LocaleProvider()..loadSavedLocale(),
+      ),
+      ChangeNotifierProvider(
+        create:
+            (_) => HiddenPasswordProvider(
+              hiddenPasswordRepository: hiddenPasswordRepository,
+              deviceAuthService: deviceAuthService,
+            ),
       ),
       ChangeNotifierProvider(
         create:

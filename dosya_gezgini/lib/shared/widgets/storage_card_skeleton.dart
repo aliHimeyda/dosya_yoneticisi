@@ -23,7 +23,7 @@ class StorageCardSkeleton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppSkeleton(height: 10, width: double.infinity),
-          SizedBox(height: 8),
+          SizedBox(height: 3),
           AppSkeleton(height: 12, width: 120),
         ],
       ),

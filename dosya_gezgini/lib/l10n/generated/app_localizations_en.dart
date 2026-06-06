@@ -30,6 +30,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savedFiles => 'Saved Files';
 
   @override
+  String get downloadsLabel => 'Downloads';
+
+  @override
+  String get permissionDeniedShort => 'No access';
+
+  @override
+  String get unreadableShort => 'Unreadable';
+
+  @override
   String get errorOccurred => 'Something went wrong';
 
   @override
@@ -167,6 +176,70 @@ class AppLocalizationsEn extends AppLocalizations {
   String get incorrectPassword => 'Incorrect password';
 
   @override
+  String get forgotHiddenPassword => 'Forgot my password';
+
+  @override
+  String get hiddenPasswordVerifyDescription =>
+      'Enter your password to access hidden files.';
+
+  @override
+  String get hiddenPasswordCreateTitle => 'Create a new password';
+
+  @override
+  String get hiddenPasswordCreateDescription =>
+      'Create your password for hidden files.';
+
+  @override
+  String get hiddenPasswordCreateAction => 'Create password';
+
+  @override
+  String get hiddenPasswordResetTitle => 'Set a new password';
+
+  @override
+  String get hiddenPasswordResetDescription =>
+      'Create your new password for hidden files.';
+
+  @override
+  String get hiddenPasswordUpdateAction => 'Update password';
+
+  @override
+  String get hiddenPasswordNewHint => 'New password';
+
+  @override
+  String get hiddenPasswordConfirmHint => 'Repeat new password';
+
+  @override
+  String get hiddenPasswordEmptyError => 'Password cannot be empty.';
+
+  @override
+  String get hiddenPasswordMismatch => 'Passwords do not match.';
+
+  @override
+  String get hiddenPasswordUpdateFailed =>
+      'Password could not be updated. Please try again.';
+
+  @override
+  String get hiddenPasswordUpdatedSuccess => 'Hidden files password updated.';
+
+  @override
+  String get hiddenPasswordDeviceAuthReason =>
+      'Verify your phone lock to reset the hidden files password';
+
+  @override
+  String get hiddenPasswordNoSecureLock =>
+      'Your phone does not have a screen lock set. Set a device lock first to reset the password.';
+
+  @override
+  String get hiddenPasswordResetCancelled => 'The operation was cancelled.';
+
+  @override
+  String get hiddenPasswordAuthFailed => 'Phone verification failed.';
+
+  @override
+  String get hiddenPasswordAuthUnsupported =>
+      'Secure authentication is not supported on this device.';
+
+  @override
   String get ok => 'OK';
 
   @override
@@ -274,6 +347,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get operationCompleted => 'Operation completed';
+
+  @override
+  String get cleanerTitle => 'Deep Cleanup';
+
+  @override
+  String get cleanerStop => 'Stop';
+
+  @override
+  String get cleanerStopping => 'Stopping...';
+
+  @override
+  String get cleanerCompleted => 'Completed';
+
+  @override
+  String get cleanerCleaningInProgress => 'Cleaning...';
+
+  @override
+  String get cleanerCleaningCurrent => 'Cleanup in progress';
+
+  @override
+  String get cleanerScanCompleted => 'Scan completed';
+
+  @override
+  String get cleanerScanStopped => 'Scan stopped';
+
+  @override
+  String get cleanerScanningPrefix => 'Scanning';
+
+  @override
+  String get cleanerScanSummaryTitle => 'Scan summary';
+
+  @override
+  String get cleanerCleaningSummaryTitle => 'Cleanup summary';
+
+  @override
+  String get cleanerStageCacheFiles => 'Cache files';
+
+  @override
+  String get cleanerStageUnusedFiles => 'Unused files';
+
+  @override
+  String get cleanerStagePackages => 'Packages';
+
+  @override
+  String get cleanerStageResidualFiles => 'Residual files';
+
+  @override
+  String get cleanerStageMemory => 'Memory';
 
   @override
   String get temporaryFilesCollected => 'Temporary files scanned';

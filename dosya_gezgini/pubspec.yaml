@@ -53,8 +53,10 @@ dependencies:
   archive: ^4.0.5
   share_plus: ^10.1.4
   path: ^1.9.1
+  crypto: ^3.0.6
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+  local_auth: ^2.3.0
 
 dev_dependencies:
   flutter_test:

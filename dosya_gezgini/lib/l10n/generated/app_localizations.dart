@@ -142,6 +142,24 @@ abstract class AppLocalizations {
   /// **'Saved Files'**
   String get savedFiles;
 
+  /// No description provided for @downloadsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get downloadsLabel;
+
+  /// No description provided for @permissionDeniedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'No access'**
+  String get permissionDeniedShort;
+
+  /// No description provided for @unreadableShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Unreadable'**
+  String get unreadableShort;
+
   /// No description provided for @errorOccurred.
   ///
   /// In en, this message translates to:
@@ -406,6 +424,120 @@ abstract class AppLocalizations {
   /// **'Incorrect password'**
   String get incorrectPassword;
 
+  /// No description provided for @forgotHiddenPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot my password'**
+  String get forgotHiddenPassword;
+
+  /// No description provided for @hiddenPasswordVerifyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password to access hidden files.'**
+  String get hiddenPasswordVerifyDescription;
+
+  /// No description provided for @hiddenPasswordCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new password'**
+  String get hiddenPasswordCreateTitle;
+
+  /// No description provided for @hiddenPasswordCreateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your password for hidden files.'**
+  String get hiddenPasswordCreateDescription;
+
+  /// No description provided for @hiddenPasswordCreateAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Create password'**
+  String get hiddenPasswordCreateAction;
+
+  /// No description provided for @hiddenPasswordResetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a new password'**
+  String get hiddenPasswordResetTitle;
+
+  /// No description provided for @hiddenPasswordResetDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your new password for hidden files.'**
+  String get hiddenPasswordResetDescription;
+
+  /// No description provided for @hiddenPasswordUpdateAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Update password'**
+  String get hiddenPasswordUpdateAction;
+
+  /// No description provided for @hiddenPasswordNewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get hiddenPasswordNewHint;
+
+  /// No description provided for @hiddenPasswordConfirmHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat new password'**
+  String get hiddenPasswordConfirmHint;
+
+  /// No description provided for @hiddenPasswordEmptyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Password cannot be empty.'**
+  String get hiddenPasswordEmptyError;
+
+  /// No description provided for @hiddenPasswordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match.'**
+  String get hiddenPasswordMismatch;
+
+  /// No description provided for @hiddenPasswordUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Password could not be updated. Please try again.'**
+  String get hiddenPasswordUpdateFailed;
+
+  /// No description provided for @hiddenPasswordUpdatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden files password updated.'**
+  String get hiddenPasswordUpdatedSuccess;
+
+  /// No description provided for @hiddenPasswordDeviceAuthReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your phone lock to reset the hidden files password'**
+  String get hiddenPasswordDeviceAuthReason;
+
+  /// No description provided for @hiddenPasswordNoSecureLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone does not have a screen lock set. Set a device lock first to reset the password.'**
+  String get hiddenPasswordNoSecureLock;
+
+  /// No description provided for @hiddenPasswordResetCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The operation was cancelled.'**
+  String get hiddenPasswordResetCancelled;
+
+  /// No description provided for @hiddenPasswordAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone verification failed.'**
+  String get hiddenPasswordAuthFailed;
+
+  /// No description provided for @hiddenPasswordAuthUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure authentication is not supported on this device.'**
+  String get hiddenPasswordAuthUnsupported;
+
   /// No description provided for @ok.
   ///
   /// In en, this message translates to:
@@ -609,6 +741,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Operation completed'**
   String get operationCompleted;
+
+  /// No description provided for @cleanerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Cleanup'**
+  String get cleanerTitle;
+
+  /// No description provided for @cleanerStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get cleanerStop;
+
+  /// No description provided for @cleanerStopping.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopping...'**
+  String get cleanerStopping;
+
+  /// No description provided for @cleanerCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get cleanerCompleted;
+
+  /// No description provided for @cleanerCleaningInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleaning...'**
+  String get cleanerCleaningInProgress;
+
+  /// No description provided for @cleanerCleaningCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup in progress'**
+  String get cleanerCleaningCurrent;
+
+  /// No description provided for @cleanerScanCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan completed'**
+  String get cleanerScanCompleted;
+
+  /// No description provided for @cleanerScanStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan stopped'**
+  String get cleanerScanStopped;
+
+  /// No description provided for @cleanerScanningPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning'**
+  String get cleanerScanningPrefix;
+
+  /// No description provided for @cleanerScanSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan summary'**
+  String get cleanerScanSummaryTitle;
+
+  /// No description provided for @cleanerCleaningSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup summary'**
+  String get cleanerCleaningSummaryTitle;
+
+  /// No description provided for @cleanerStageCacheFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache files'**
+  String get cleanerStageCacheFiles;
+
+  /// No description provided for @cleanerStageUnusedFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Unused files'**
+  String get cleanerStageUnusedFiles;
+
+  /// No description provided for @cleanerStagePackages.
+  ///
+  /// In en, this message translates to:
+  /// **'Packages'**
+  String get cleanerStagePackages;
+
+  /// No description provided for @cleanerStageResidualFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Residual files'**
+  String get cleanerStageResidualFiles;
+
+  /// No description provided for @cleanerStageMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get cleanerStageMemory;
 
   /// No description provided for @temporaryFilesCollected.
   ///

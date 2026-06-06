@@ -30,6 +30,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get savedFiles => 'Kaydedilen Dosyalar';
 
   @override
+  String get downloadsLabel => 'İndirilenler';
+
+  @override
+  String get permissionDeniedShort => 'İzin yok';
+
+  @override
+  String get unreadableShort => 'Okunamadı';
+
+  @override
   String get errorOccurred => 'Bir hata oluştu';
 
   @override
@@ -167,6 +176,70 @@ class AppLocalizationsTr extends AppLocalizations {
   String get incorrectPassword => 'Şifre hatalı';
 
   @override
+  String get forgotHiddenPassword => 'Şifremi unuttum';
+
+  @override
+  String get hiddenPasswordVerifyDescription =>
+      'Gizli dosyalara erişmek için şifrenizi girin.';
+
+  @override
+  String get hiddenPasswordCreateTitle => 'Yeni şifre oluştur';
+
+  @override
+  String get hiddenPasswordCreateDescription =>
+      'Gizli dosyalar için şifrenizi oluşturun.';
+
+  @override
+  String get hiddenPasswordCreateAction => 'Şifreyi oluştur';
+
+  @override
+  String get hiddenPasswordResetTitle => 'Yeni şifre belirle';
+
+  @override
+  String get hiddenPasswordResetDescription =>
+      'Gizli dosyalar için yeni şifrenizi oluşturun.';
+
+  @override
+  String get hiddenPasswordUpdateAction => 'Şifreyi güncelle';
+
+  @override
+  String get hiddenPasswordNewHint => 'Yeni şifre';
+
+  @override
+  String get hiddenPasswordConfirmHint => 'Yeni şifre tekrar';
+
+  @override
+  String get hiddenPasswordEmptyError => 'Şifre boş olamaz.';
+
+  @override
+  String get hiddenPasswordMismatch => 'Şifreler eşleşmiyor.';
+
+  @override
+  String get hiddenPasswordUpdateFailed =>
+      'Şifre güncellenemedi. Lütfen tekrar deneyin.';
+
+  @override
+  String get hiddenPasswordUpdatedSuccess => 'Gizli dosya şifresi güncellendi.';
+
+  @override
+  String get hiddenPasswordDeviceAuthReason =>
+      'Gizli dosyalar şifresini sıfırlamak için telefon kilidini doğrulayın';
+
+  @override
+  String get hiddenPasswordNoSecureLock =>
+      'Telefonunuzda ekran kilidi tanımlı değil. Şifre sıfırlama için önce cihaz kilidi ayarlayın.';
+
+  @override
+  String get hiddenPasswordResetCancelled => 'İşlem iptal edildi.';
+
+  @override
+  String get hiddenPasswordAuthFailed => 'Telefon doğrulaması başarısız oldu.';
+
+  @override
+  String get hiddenPasswordAuthUnsupported =>
+      'Bu cihazda güvenli doğrulama desteklenmiyor.';
+
+  @override
   String get ok => 'Tamam';
 
   @override
@@ -275,6 +348,54 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get operationCompleted => 'İşlem sonlandı';
+
+  @override
+  String get cleanerTitle => 'Derin Temizleme';
+
+  @override
+  String get cleanerStop => 'Durdur';
+
+  @override
+  String get cleanerStopping => 'Durduruluyor...';
+
+  @override
+  String get cleanerCompleted => 'Tamamlandı';
+
+  @override
+  String get cleanerCleaningInProgress => 'Temizleniyor...';
+
+  @override
+  String get cleanerCleaningCurrent => 'Temizlik sürüyor';
+
+  @override
+  String get cleanerScanCompleted => 'Tarama tamamlandı';
+
+  @override
+  String get cleanerScanStopped => 'Tarama durduruldu';
+
+  @override
+  String get cleanerScanningPrefix => 'Taranıyor';
+
+  @override
+  String get cleanerScanSummaryTitle => 'Tarama özeti';
+
+  @override
+  String get cleanerCleaningSummaryTitle => 'Temizlik özeti';
+
+  @override
+  String get cleanerStageCacheFiles => 'Önbellek dosyaları';
+
+  @override
+  String get cleanerStageUnusedFiles => 'Kullanılmayan dosyalar';
+
+  @override
+  String get cleanerStagePackages => 'Paketler';
+
+  @override
+  String get cleanerStageResidualFiles => 'Artık dosyalar';
+
+  @override
+  String get cleanerStageMemory => 'Bellek';
 
   @override
   String get temporaryFilesCollected => 'Geçici dosyalar tarandı';

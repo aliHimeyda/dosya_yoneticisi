@@ -89,11 +89,11 @@ class AppTheme extends ChangeNotifier {
 
     textTheme: TextTheme(
       bodyLarge: TextStyle(
-        color: AppColors.koyuGri,
+        color: AppColors.siyah, // Genel metin rengini siyah yapar
         fontSize: 16,
       ), // Genel metin stilini belirler (büyük)
       bodyMedium: TextStyle(
-        color: AppColors.koyuGri,
+        color: AppColors.siyah, // Genel metin rengini siyah yapar
         fontSize: 12,
       ), // Genel metin stilini belirler (orta)
       titleLarge: TextStyle(
@@ -201,9 +201,33 @@ class AppColors {
   static const Color koyuBeyaz = Color(
     0xFFF2ECEC,
   ); // Açık Beyaz (Light Mode Arka Plan)
-  static const Color siyah = Color(0xFF121212); // Siyah (Dark Mode Arka Plan)
+  static const Color siyah = Colors.black; // Siyah (Dark Mode Arka Plan)
   static const Color bordo = Color(0xFF7A1E1E); // Bordo
   static const Color krem = Color(
     0xFFF4E1C0,
   ); // Krem (Light Mode'da Kart Rengi)
+}
+
+extension CleanerThemeColors on ThemeData {
+  Color get cleanerSurface => scaffoldBackgroundColor;
+
+  Color get cleanerPrimaryText =>
+      textTheme.bodyLarge?.color ?? colorScheme.onSurface;
+
+  Color get cleanerSecondaryText =>
+      (textTheme.bodyMedium?.color ?? colorScheme.onSurface).withValues(
+        alpha: brightness == Brightness.dark ? 0.68 : 0.74,
+      );
+
+  Color get cleanerAccent => primaryColor;
+
+  Color get cleanerActionBackground => cardColor;
+
+  Color get cleanerDivider => cleanerPrimaryText.withValues(alpha: 0.08);
+
+  Color get cleanerGlow => cleanerAccent.withValues(
+    alpha: brightness == Brightness.dark ? 0.20 : 0.14,
+  );
+
+  Color get cleanerError => colorScheme.error;
 }

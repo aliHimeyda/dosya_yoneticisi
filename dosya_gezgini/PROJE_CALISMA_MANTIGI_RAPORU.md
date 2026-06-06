@@ -2412,3 +2412,98 @@ Boyut seçimi kuralı:
 - `1 MB - 1 GB arası -> MB`
 - `1 KB - 1 MB arası -> KB`
 - `1 KB altı -> Byte`
+## Temizlik Sistemi Son Guncelleme
+
+Temizlik ekrani artik eski stateful/demo akisla degil, gercek cleanup state'ine bagli modern stateless UI ile calisir. Bu not, onceki cleanup anlatimlarinin uzerine guncel davranisi ekler.
+
+### Route ve Sayfa Yapisi
+
+1. Router hala `Temizliksayfasi` route/class yapisini kullanir.
+2. `Temizliksayfasi`, sayfa icin yerel `ChangeNotifierProvider<TemizliksayfasiProvider>` kurar.
+3. Ekranda `CleanerPage` gosterilir.
+4. `CleanerPage` tamamen stateless yapidadir.
+5. Cleanup UI icinde `StatefulWidget`, `setState`, `Timer.periodic` veya mock tarama listesi bulunmaz.
+
+### Provider ve State Orchestration
+
+1. Cleanup orchestration `TemizliksayfasiProvider` icine tasinmistir.
+2. Provider, `Dosyaislemleri` state'ini dinler ve UI'a sade okunabilir alanlar halinde aktarir.
+3. Baslica UI state alanlari sunlardir:
+   - `isScanning`
+   - `isCleaning`
+   - `isStopped`
+   - `cleanupCandidateCount`
+   - `cleanupCandidateBytes`
+   - `progressValue`
+   - `currentScanningPackage`
+   - `scanIssues`
+   - `deleteIssues`
+   - `deleteResult`
+4. Tarama baslatma `ensureScanStarted()` ile idempotent sekilde yapilir.
+5. Bu metod taramayi build sirasinda degil, guvenli sekilde frame sonrasinda baslatir.
+
+### CleaningService Tarama Asamalari
+
+Guncel cleanup taramasi 5 asamada ilerler:
+
+1. `cache`
+   - cache ve gecici dosyalar analiz edilir
+2. `unusedFiles`
+   - kullanilmayan/onerisel dosyalar analiz edilir
+   - riskli otomatik silme yapilmaz
+3. `packages`
+   - `.apk`, `.xapk`, `.apks` uzantili paket dosyalari taranir
+4. `residualFiles`
+   - artik/gecici/junk adaylari guvenli kurallarla taranir
+5. `memory`
+   - sahte RAM temizligi yapilmaz
+   - desteklenmeyen durumda analiz/optimizasyon asamasi olarak tamamlanir
+
+### Tarama ve Durdurma Akisi
+
+1. `Dosyaislemleri.startCleanupScan()` cleanup taramasini baslatir.
+2. Iceride `CleaningService.scan(...)` calisir.
+3. `onProgress` callback'i ile asama ilerlemesi ve aday boyut bilgileri geri bildirilir.
+4. `shouldCancel` kontrolu ile kullanicinin stop istegi izlenir.
+5. Kullanici durdurdugunda `requestCleanupStop()` state'e yazilir.
+6. Service bunu gorurse `CleaningCancelledException` firlatir.
+7. `Dosyaislemleri` bu durumu yakalar ve cleanup state'ini `isStopped` olacak sekilde gunceller.
+
+### Ana Aksiyon Butonu
+
+Alt ana buton state'e gore degisir:
+
+1. Tarama calisiyorsa `Durdur`
+2. Tarama bitmis ve temizlenebilir aday varsa `Temizle`
+3. Tarama durmus veya tekrar denenmesi gerekiyorsa `Tekrar Tara`
+4. Temizlik tamamlandiysa `Tamamlandi`
+
+Bu sayede eski sayfadaki birden fazla aksiyon, tek ama state-duyarli bir buton akisina toplanmistir.
+
+### Temizleme ve Sonrasi
+
+1. Kullanici `Temizle` dediginde once mevcut onay dialogu akisi calisir.
+2. Onay sonrasinda `Dosyaislemleri.startCleanupDelete()` devreye girer.
+3. `CleaningService.deleteCandidates(...)` secilen cleanup adaylarini siler.
+4. Ayni akista:
+   - thumbnail metadata kayitlari temizlenir
+   - file metadata cache kayitlari temizlenir
+   - file index yenilemesi tetiklenir
+5. `Dosyaislemleri`, mevcut refresh zincirini koruyarak root, aktif klasor ve index senkronunu surdurur.
+
+### UI Davranisi
+
+1. Buyuk cleanup dairesi toplam temizlenebilir boyutu gosterir.
+2. `currentScanningPackage` alani o anda taranan asamayi veya etiketi yansitir.
+3. Durum listesi her cleanup asamasi icin `pending -> scanning -> completed/failed` gecisi gosterir.
+4. `scanIssues` ve `deleteIssues` ayri kartlar halinde gosterilir.
+5. `flutter_animate`, `AnimatedSwitcher` ve benzeri animasyonlar gercek provider state'i ile calisir.
+
+### Ozet
+
+Bu guncelleme ile cleanup sistemi:
+
+1. mevcut gercek tarama ve silme mantigini korur
+2. UI tarafini stateless ve provider tabanli hale getirir
+3. cleanup asamalarini daha gorunur yapar
+4. dosya sistemi, metadata ve index senkronunu cleanup sonrasi korumaya devam eder

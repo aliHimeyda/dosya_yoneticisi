@@ -21,7 +21,7 @@ class Localestoragebilgileri extends ChangeNotifier {
       freespace = 0;
       usedspace = 0;
       notifyListeners();
-      print('hata $e');
+      debugPrint('depolamabilgilernigetir hata: $e');
     }
   }
 }

@@ -30,6 +30,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get savedFiles => 'الملفات المحفوظة';
 
   @override
+  String get downloadsLabel => 'التنزيلات';
+
+  @override
+  String get permissionDeniedShort => 'لا يوجد إذن';
+
+  @override
+  String get unreadableShort => 'غير قابل للقراءة';
+
+  @override
   String get errorOccurred => 'حدث خطأ ما';
 
   @override
@@ -167,6 +176,71 @@ class AppLocalizationsAr extends AppLocalizations {
   String get incorrectPassword => 'كلمة المرور غير صحيحة';
 
   @override
+  String get forgotHiddenPassword => 'نسيت كلمة المرور';
+
+  @override
+  String get hiddenPasswordVerifyDescription =>
+      'أدخل كلمة المرور للوصول إلى الملفات المخفية.';
+
+  @override
+  String get hiddenPasswordCreateTitle => 'أنشئ كلمة مرور جديدة';
+
+  @override
+  String get hiddenPasswordCreateDescription =>
+      'أنشئ كلمة مرورك للملفات المخفية.';
+
+  @override
+  String get hiddenPasswordCreateAction => 'إنشاء كلمة المرور';
+
+  @override
+  String get hiddenPasswordResetTitle => 'حدد كلمة مرور جديدة';
+
+  @override
+  String get hiddenPasswordResetDescription =>
+      'أنشئ كلمة المرور الجديدة للملفات المخفية.';
+
+  @override
+  String get hiddenPasswordUpdateAction => 'تحديث كلمة المرور';
+
+  @override
+  String get hiddenPasswordNewHint => 'كلمة المرور الجديدة';
+
+  @override
+  String get hiddenPasswordConfirmHint => 'أعد إدخال كلمة المرور الجديدة';
+
+  @override
+  String get hiddenPasswordEmptyError => 'لا يمكن أن تكون كلمة المرور فارغة.';
+
+  @override
+  String get hiddenPasswordMismatch => 'كلمتا المرور غير متطابقتين.';
+
+  @override
+  String get hiddenPasswordUpdateFailed =>
+      'تعذر تحديث كلمة المرور. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get hiddenPasswordUpdatedSuccess =>
+      'تم تحديث كلمة مرور الملفات المخفية.';
+
+  @override
+  String get hiddenPasswordDeviceAuthReason =>
+      'قم بالتحقق من قفل الهاتف لإعادة تعيين كلمة مرور الملفات المخفية';
+
+  @override
+  String get hiddenPasswordNoSecureLock =>
+      'لا يوجد قفل شاشة معد على هاتفك. أعدد قفلاً للجهاز أولاً لإعادة تعيين كلمة المرور.';
+
+  @override
+  String get hiddenPasswordResetCancelled => 'تم إلغاء العملية.';
+
+  @override
+  String get hiddenPasswordAuthFailed => 'فشل التحقق من الهاتف.';
+
+  @override
+  String get hiddenPasswordAuthUnsupported =>
+      'التحقق الآمن غير مدعوم على هذا الجهاز.';
+
+  @override
   String get ok => 'موافق';
 
   @override
@@ -214,7 +288,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get operationRollbackFailed => 'فشلت العملية وتعذر إكمال التراجع.';
 
   @override
-  String get invalidName => 'أدخل اسماً صالحاً';
+  String get invalidName => 'أدخل اسمًا صالحًا';
 
   @override
   String get itemAlreadyExists => 'يوجد عنصر آخر بالاسم نفسه';
@@ -272,6 +346,54 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get operationCompleted => 'اكتملت العملية';
+
+  @override
+  String get cleanerTitle => 'التنظيف العميق';
+
+  @override
+  String get cleanerStop => 'إيقاف';
+
+  @override
+  String get cleanerStopping => 'جارٍ الإيقاف...';
+
+  @override
+  String get cleanerCompleted => 'اكتمل';
+
+  @override
+  String get cleanerCleaningInProgress => 'جارٍ التنظيف...';
+
+  @override
+  String get cleanerCleaningCurrent => 'التنظيف جارٍ';
+
+  @override
+  String get cleanerScanCompleted => 'اكتمل الفحص';
+
+  @override
+  String get cleanerScanStopped => 'تم إيقاف الفحص';
+
+  @override
+  String get cleanerScanningPrefix => 'جارٍ الفحص';
+
+  @override
+  String get cleanerScanSummaryTitle => 'ملخص الفحص';
+
+  @override
+  String get cleanerCleaningSummaryTitle => 'ملخص التنظيف';
+
+  @override
+  String get cleanerStageCacheFiles => 'ملفات التخزين المؤقت';
+
+  @override
+  String get cleanerStageUnusedFiles => 'الملفات غير المستخدمة';
+
+  @override
+  String get cleanerStagePackages => 'الحزم';
+
+  @override
+  String get cleanerStageResidualFiles => 'الملفات المتبقية';
+
+  @override
+  String get cleanerStageMemory => 'الذاكرة';
 
   @override
   String get temporaryFilesCollected => 'تم فحص الملفات المؤقتة';

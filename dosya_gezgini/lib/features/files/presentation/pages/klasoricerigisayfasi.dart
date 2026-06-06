@@ -13,7 +13,6 @@ import 'package:dosya_gezgini/shared/widgets/error_state_widget.dart';
 import 'package:dosya_gezgini/shared/widgets/file_item_skeleton.dart';
 import 'package:dosya_gezgini/shared/widgets/folder_list_skeleton.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 class Klasoricerigisayfasi extends StatelessWidget {

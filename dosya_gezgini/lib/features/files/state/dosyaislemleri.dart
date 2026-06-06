@@ -73,6 +73,8 @@ class Dosyaislemleri extends ChangeNotifier {
   Object? _cleanupError;
   bool _isCleanupScanning = false;
   bool _isCleanupDeleting = false;
+  bool _cleanupStopRequested = false;
+  bool _cleanupWasStopped = false;
 
   bool get hasSelectedFiles => filelistesi.isNotEmpty;
   bool get hasClipboardContent =>
@@ -88,6 +90,8 @@ class Dosyaislemleri extends ChangeNotifier {
   Object? get cleanupError => _cleanupError;
   bool get isCleanupScanning => _isCleanupScanning;
   bool get isCleanupDeleting => _isCleanupDeleting;
+  bool get cleanupStopRequested => _cleanupStopRequested;
+  bool get cleanupWasStopped => _cleanupWasStopped;
   bool get hasCleanupCandidates =>
       (_cleanupScanResult?.candidates.length ?? 0) > 0;
   bool get hasCleanupResult => _cleanupDeleteResult != null;
@@ -163,6 +167,8 @@ class Dosyaislemleri extends ChangeNotifier {
     }
 
     _isCleanupScanning = true;
+    _cleanupStopRequested = false;
+    _cleanupWasStopped = false;
     _cleanupError = null;
     _cleanupScanProgress = null;
     _cleanupScanResult = null;
@@ -181,10 +187,11 @@ class Dosyaislemleri extends ChangeNotifier {
         onProgress: (progress) {
           _cleanupScanProgress = progress;
           loading = true;
-          gecicidosyalaralinmasi = progress.completedSourceCount >= 1;
-          onbellekdosyalarialinmasi = progress.completedSourceCount >= 2;
+          gecicidosyalaralinmasi = progress.completedSourceCount >= 4;
+          onbellekdosyalarialinmasi = progress.completedSourceCount >= 1;
           notifyListeners();
         },
+        shouldCancel: () => _cleanupStopRequested,
       );
 
       _cleanupScanResult = result;
@@ -192,12 +199,16 @@ class Dosyaislemleri extends ChangeNotifier {
       gecicidosyalaralinmasi = true;
       onbellekdosyalarialinmasi = true;
       aramaloading = result.hasCandidates;
+    } on CleaningCancelledException {
+      _cleanupWasStopped = true;
+      aramaloading = false;
     } catch (error) {
       _cleanupError = error;
       aramaloading = false;
     } finally {
       loading = false;
       _isCleanupScanning = false;
+      _cleanupStopRequested = false;
       notifyListeners();
     }
   }
@@ -213,6 +224,8 @@ class Dosyaislemleri extends ChangeNotifier {
     }
 
     _isCleanupDeleting = true;
+    _cleanupStopRequested = false;
+    _cleanupWasStopped = false;
     _cleanupError = null;
     _cleanupDeleteProgress = CleaningDeleteProgress(
       processedItems: 0,
@@ -253,6 +266,7 @@ class Dosyaislemleri extends ChangeNotifier {
         ),
         processedFiles: currentScanResult.processedFiles,
         issues: currentScanResult.issues,
+        sourceSummaries: currentScanResult.sourceSummaries,
       );
       _syncCleanupCandidates(remainingCandidates);
       aramaloading = remainingCandidates.isNotEmpty;
@@ -263,6 +277,15 @@ class Dosyaislemleri extends ChangeNotifier {
       _isCleanupDeleting = false;
       notifyListeners();
     }
+  }
+
+  void requestCleanupStop() {
+    if (!_isCleanupScanning || _cleanupStopRequested) {
+      return;
+    }
+
+    _cleanupStopRequested = true;
+    notifyListeners();
   }
 
   void _syncCleanupCandidates(List<CleaningCandidate> candidates) {
